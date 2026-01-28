@@ -15,7 +15,8 @@
 ### 2. 핵심 제어 이론
 
 ### 2.1 Receding Horizon Control(RHC, 후퇴 지평선 제어)  
-논문의 핵심은 비선형 시스템의 동역학을 고려한 RHC의 실시간 최적화이다. RHC는 고정된 지평선 최적화의 한계를 극복하기 위해 제안된 전략이다. 이는 전체 제어 시퀀스를 계산하되, 오직 첫 번째 단계의 제어 입력($u_t^*$)만을 시스템에 적용하고 다음 시점에 이 과정을 반복하는 방식이다.  
+논문의 핵심은 비선형 시스템의 동역학을 고려한 RHC의 실시간 최적화이다. RHC는 고정된 지평선 최적화의 한계를 극복하기 위해 제안된 전략이다.  
+이는 전체 제어 시퀀스를 계산하되, 오직 첫 번째 단계의 제어 입력($u_t^*$)만을 시스템에 적용하고 다음 시점에 이 과정을 반복하는 방식이다.  
  
 RHC의 일반적인 최적화 문제는 다음과 같이 표현할 수 있다.  
 
@@ -31,7 +32,8 @@ $$+ (u_{k}-u_{k-1})^{T}R_{\Delta}(u_{k}-u_{k-1}) + (x_{N}-x_{ref,N})^{T}P(x_{N}-
   
 ($Q_x$: 상태 오차에 대한 가중치, $R_u$: 제어 입력 오차에 대한 가중치, $R_\Delta$: 제어 입력 변화율에 대한 가중치(좀 더 부드러운 제어를 위해 사용), $P$: 최종 상태 오차에 대한 가중치)  
 
-이를 통해 시스템의 실제 측정값과 모델 예측값의 차이를 이용해 외부 외란 $\hat{d}$를 추정한다. 즉, 정상 상태(Steady-state)에서 목표 궤적을 정확히 따라갈 수 있는 $x_{ref}$와 $u_{ref}$를 계산한다.  
+이를 통해 시스템의 실제 측정값과 모델 예측값의 차이를 이용해 외부 외란 $\hat{d}$를 추정한다.  
+즉, 정상 상태(Steady-state)에서 목표 궤적을 정확히 따라갈 수 있는 $x_{ref}$와 $u_{ref}$를 계산한다.  
 
 ### 2.3 Nonlinear MPC  
 
@@ -42,11 +44,23 @@ $$ \begin{aligned} \min_{U,X} \quad & \int_{0}^{T} \Vert h(x(t), u(t)) - y_{ref}
 항공기는 일반적으로 비선형 특성을 다룬다. 이는 Direct multiple shooting 기법을 통해 비선형 계획법 문제로 변환하며, qpOASES와 같은 솔버를 활용하여 실시간으로 해결한다.
 
 ### 2.4 Linear Robust MPC
-Robust MPC는 외란이 존재하더라도 최악의 상황을 고려하여 제어하는 방식이다. 아무리 최악인 외란이 존재하여도 무조건 기체가 머물게 하겠다는 보수적인 비행 전략인 셈이다.
-이는 크게 두 방식을 따른다.
-- Minimax 최적화: 외란이 발생시킬 수 있는 최대 오차를 최소화하는 방향으로 설계한다.
-- 피드백 예측: 미래에 피드백 제어가 이루어질 것임을 미리 계산에 포함하여 제어의 보수성을 줄인다.
+Robust MPC는 외란이 존재하더라도 최악의 상황을 고려하여 제어하는 방식이다. 이는 아무리 최악인 외란이 존재하여도 무조건 기체가 머물게 하겠다는 보수적인 비행 전략인 셈이다. 따라서 robust하게 다루기 위해 최소 피크 성능 지표인 MPPM(Minimum Peak Performance Measure)을 활용한다.  
+$x_{k+1} = Ax_k + Bu_k + Gw_k$($w_k$는 범위가 제한된 외란)인 시스템 모델로부터 다음 식과 같이 예측된 상태 $\mathcal{X}$는 현재 상태, 미래 제어 입력, 외란에 선형적으로 의존한다.  
+$\mathcal{X} = \mathcal{A}x_{k|k} + \mathcal{B}\mathcal{U} + \mathcal{G}\mathcal{W}$  
+$\mathcal{Y} = \mathcal{C}\mathcal{X}$
+ 
+이는 다음과 같은 방식으로 다룰 수 있다.
+1. Feedback Predictions  
+: 단순히 오픈 루프 제어 시퀀스를 계산하면 제어 결과가 지나치게 보수적(움직임이 너무 둔함)이 될 수 있다. 따라서 이를 해결하기 위해 피드백 예측 기법을 도입한다.
+$\mathcal{X} = \mathcal{A}x_{k|k} + \mathcal{B}\mathcal{V} + (\mathcal{G}+\mathcal{B}\mathcal{L})\mathcal{W}$, $\mathcal{U} = \mathcal{L}\mathcal{W} + \mathcal{V}$으로 수식을 재구성하고, 이 매개변수화를 통해 Minimax MPC 문제를 효율적으로 풀 수 있는 컨벡스 최적화 문제로 변환할 수 있다.  
 
+2. Robust Uncertain Inequalities Satisfaction
+3. Robust State and Input Constraints
+4. Minimum Peak Performance Robust MPC formulation  
+2,3,4: 외란 $w$가 범위 내의 어떤 값을 갖더라도 제약 조건을 만족해야 한다. 앞서 수식을 범위로 다루는 과정에서 수식 속 절댓값 항을 처리하기 위해 행렬 변수 $\Gamma$와 $\Omega$를 도입한다. 이에 따라 입력 제약($\mathcal{F}_u$)과 상태 제약($\mathcal{F}_x$)을 외란에 상관없이 항상 만족하도록 부등식을 재구성한다. 
+
+5. Multiparametric Explicit Solution  
+: 앞선 부등식 범위에 따라 RMPC는 매 순간 선형 프로그래밍 문제를 풀어야 하므로 연산량이 많다는 단점이 있다. 그러므로 상태 공간을 여러 개의 Polyhedral 영역으로 나누면, 각 영역에서 제어 입력은 $u_k = F^r x_k + Z^r$과 같은 단순한 선형 형태가 된다. 이는 복잡한 최적화 문제를 실시간으로 푸는 대신, 드론이 현재 어느 영역에 있는지만 확인해서 미리 저장된 공식을 쓰면 된다. 즉, 연산 능력이 매우 낮은 마이크로컨트롤러에서도 초고속 실행을 가능하게 한다. 
 
 ---  
   
@@ -93,6 +107,6 @@ UAV의 고속 비행이나 급격한 거동 시 발생하는 비선형성을 직
   
 **Review by 변정우, Aerospace Engineering Undergraduate Researcher** ---  
 **[Update - Time Log]**  
-* 2026.01.24: [Draft] 전체적인 내용 초안 작성  
-* 2026.01.28: [Ver_1] 논문 상세 수식 및 실험 관련 내용 추가
+* 2026.01.24: [Draft] 전체적인 내용(part 1,2,3,4,5) 리딩 완료 및 초안 작성  
+* 2026.01.28: [Ver_1] part 2 수식 및 관련 내용 추가
 * 2026.01.: [Final Ver] 
