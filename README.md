@@ -6,7 +6,7 @@ Category는 크게 Control-Theory, Learning-based, UAV-Systems로 분류하였�
 
 | Date | Category | Title | Status |
 | :--- | :--- | :--- | :--- |
-| 2026-01-17 ~  | 01-Control-Theory | Model Predictive Control for Trajectory Tracking of Unmanned Aerial Vehicles Using Robot Operating System | Reading |
+| 2026-01-24 ~  | 01-Control-Theory | Model Predictive Control for Trajectory Tracking of Unmanned Aerial Vehicles Using Robot Operating System | Reading |
 |  ~ | 02-Learning-based | Control of a Quadrotor with Reinforcement Learning | Soon |
 |  ~ | 03-UAV-Systems | Learning High-Speed Flight in the Wild | Soon |
 |  ~ | 01-Control-Theory | Model Predictive Path Integral Control: From Theory to Parallel Computation | Soon |
