@@ -1,27 +1,53 @@
 ## UAV 경로 추적을 위한 MPC 제어 전략 및 ROS 구현 기술 분석  
   
-### 1. 논문 정보 (Reference)  
+### 0. 논문 정보 (Reference)  
 * **Title:** Model Predictive Control for Trajectory Tracking of Unmanned Aerial Vehicles Using Robot Operating System  
 * **Authors:** Mina Kamel, Thomas Stastny, Kostas Alexis, and Roland Siegwart  
 * **Official Link:** [IEEE Xplore - MPC for UAVs using ROS](https://ieeexplore.ieee.org/document/7748310)  
-  
+* **Open Source Code Link:** [Rotary-wing Controller](https://github.com/ethz-asl/mav_control_rw), [Fixed-wing Controller](https://github.com/ethz-asl/mav_control_fw)  
+---  
+
+### 1. 서론 및 개요 (Introduction)  
+본 연구는 로봇 운영 체제(ROS)를 기반으로 무인 항공기(UAV, Unmanned Aerial Vehicle)의 정밀한 궤적 추적을 실현하기 위한 모델 예측 제어(MPC, Model Predictive Controller) 전략을 다룬다. 아래 내용은 크게 멀티로터 시스템과 고정익 UAV 두 가지 기종에 대한 MPC 설계 및 실시간 구현 방법을 기술한다. 
+
 ---  
   
-### 2. 핵심 제어 이론: Receding Horizon Control (RHC)  
-논문의 핵심은 비선형 시스템의 동역학을 고려한 RHC의 실시간 최적화이다. 기본적인 상태 방정식은 다음과 같이 정의된다.  
-  
-$$\dot{x} = f(x, u)$$  
-  
-여기서 $x \in \mathbb{R}^n$은 상태 벡터, $u \in \mathbb{R}^m$은 입력 벡터이다. MPC는 매 샘플링 시점마다 유한한 Prediction Horizon $N$에 대해 다음과 같은 비용 함수 $J_0$를 최소화하는 최적 제어 시퀀스를 계산한다.  
+### 2. 핵심 제어 이론
+
+### 2.1 Receding Horizon Control(RHC, 후퇴 지평선 제어)  
+논문의 핵심은 비선형 시스템의 동역학을 고려한 RHC의 실시간 최적화이다. RHC는 고정된 지평선 최적화의 한계를 극복하기 위해 제안된 전략이다. 이는 전체 제어 시퀀스를 계산하되, 오직 첫 번째 단계의 제어 입력($u_t^*$)만을 시스템에 적용하고 다음 시점에 이 과정을 반복하는 방식이다.  
+ 
+RHC의 일반적인 최적화 문제는 다음과 같이 표현할 수 있다.  
+
+$$ \begin{aligned} \min_{Z} \quad & F(x_{t+N}) + \sum_{k=0}^{N-1} \Vert x_{t+k} - r_t \Vert_l + \Vert u_{t+k} \Vert_l \end{aligned} $$  
+
+(제약 조건: 시스템 동역학 $x_{t+k+1} = f(x_{t+k}, u_{t+k})$, 입력 제약 $u_{t+k} \in U_C$, 상태 제약 $x_{t+k} \in X_C$  
+터미널 비용 $F(x_{t+N})$: 예측 지평선의 끝에서 시스템의 안정성을 보장하기 위한 가중치)  
+
+### 2.2 Linear MPC  
   
 $$J_{0}(x_{0},U,X_{ref},U_{ref})=\sum_{k=0}^{N-1}(x_{k}-x_{ref,k})^{T}Q_{x}(x_{k}-x_{ref,k}) + (u_{k}-u_{ref,k})^{T}R_{u}(u_{k}-u_{ref,k})$$  
 $$+ (u_{k}-u_{k-1})^{T}R_{\Delta}(u_{k}-u_{k-1}) + (x_{N}-x_{ref,N})^{T}P(x_{N}-x_{ref,N})$$  
   
-**제약 조건:** * $x_{k+1}=Ax_{k}+Bu_{k}+B_{d}d_{k}$ (이산화된 시스템 동역학 및 외란 모델)  
-* $u_{k} \in \mathbb{U}, x_{k} \in \mathbb{X}$ (입력 및 상태 제약 조건)  
-  
-폐루프 안정성을 보장하기 위해 터미널 비용 $P$와 터미널 제약 $\mathbb{X}_N$을 적절히 선택한다.  
-  
+($Q_x$: 상태 오차에 대한 가중치, $R_u$: 제어 입력 오차에 대한 가중치, $R_\Delta$: 제어 입력 변화율에 대한 가중치(좀 더 부드러운 제어를 위해 사용), $P$: 최종 상태 오차에 대한 가중치)  
+
+이를 통해 시스템의 실제 측정값과 모델 예측값의 차이를 이용해 외부 외란 $\hat{d}$를 추정한다. 즉, 정상 상태(Steady-state)에서 목표 궤적을 정확히 따라갈 수 있는 $x_{ref}$와 $u_{ref}$를 계산한다.  
+
+### 2.3 Nonlinear MPC  
+
+$$ \begin{aligned} \min_{U,X} \quad & \int_{0}^{T} \Vert h(x(t), u(t)) - y_{ref} \Vert_Q^2 dt + \Vert h(x(T)) - y_{N,ref} \Vert_{Q_N}^2 \end{aligned} $$
+
+($Q_x$: 상태 오차(State Error)에 대한 가중치, $R_u$: 제어 입력 오차(Control Input Error)에 대한 가중치, $R_\Delta$: 제어 입력 변화율에 대한 가중치, $P$: 최종 상태 오차(Terminal State Error)에 대한 가중치)  
+
+항공기는 일반적으로 비선형 특성을 다룬다. 이는 Direct multiple shooting 기법을 통해 비선형 계획법 문제로 변환하며, qpOASES와 같은 솔버를 활용하여 실시간으로 해결한다.
+
+### 2.4 Linear Robust MPC
+Robust MPC는 외란이 존재하더라도 최악의 상황을 고려하여 제어하는 방식이다. 아무리 최악인 외란이 존재하여도 무조건 기체가 머물게 하겠다는 보수적인 비행 전략인 셈이다.
+이는 크게 두 방식을 따른다.
+- Minimax 최적화: 외란이 발생시킬 수 있는 최대 오차를 최소화하는 방향으로 설계한다.
+- 피드백 예측: 미래에 피드백 제어가 이루어질 것임을 미리 계산에 포함하여 제어의 보수성을 줄인다.
+
+
 ---  
   
 ### 3. 제어 기법의 다변화: Linear, Nonlinear, Robust  
@@ -68,5 +94,5 @@ UAV의 고속 비행이나 급격한 거동 시 발생하는 비선형성을 직
 **Review by 변정우, Aerospace Engineering Undergraduate Researcher** ---  
 **[Update - Time Log]**  
 * 2026.01.24: [Draft] 전체적인 내용 초안 작성  
-* 2026.01.24: [Ver_1] 논문 상세 수식 및 하드웨어 구현 내용 심화 보강  
+* 2026.01.28: [Ver_1] 논문 상세 수식 및 실험 관련 내용 추가
 * 2026.01.: [Final Ver] 
