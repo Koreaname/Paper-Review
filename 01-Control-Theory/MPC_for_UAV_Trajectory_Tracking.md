@@ -64,36 +64,78 @@ $\mathcal{X} = \mathcal{A}x_{k|k} + \mathcal{B}\mathcal{V} + (\mathcal{G}+\mathc
 
 ---  
   
-### 3. 제어 기법의 다변화: Linear, Nonlinear, Robust  
-논문은 UAV의 운용 목적과 기체 특성(Multi-rotor, Fixed-wing)에 따라 세 가지 MPC 전략을 제시한다.  
-  
-#### 3.1. Linear MPC & Disturbance Observer  
-모델링 오차 및 정상 상태 편차(Steady-state offset)를 제거하기 위해 외란 항 $d_k$를 포함한 증강 모델을 사용한다. Luenberger 형태의 Observer를 통해 외란을 실시간으로 추정한다.  
-  
-$$\begin{bmatrix} \hat{x}_{k+1} \\ \hat{d}_{k+1} \end{bmatrix} = \begin{bmatrix} A & B_{d} \\ 0 & I \end{bmatrix} \begin{bmatrix} \hat{x}_{k} \\ \hat{d}_{k} \end{bmatrix} + \begin{bmatrix} B \\ 0 \end{bmatrix} u_{k} + \begin{bmatrix} L_{x} \\ L_{d} \end{bmatrix} (C\hat{x}_{k} - y_{m,k})$$  
-  
-추정된 $\hat{d}$를 기반으로 Offset-free 타겟 상태 $x_{ref}$와 입력 $u_{ref}$를 계산하여 비용 함수에 반영한다.  
-  
-#### 3.2. Nonlinear MPC (NMPC)  
-UAV의 고속 비행이나 급격한 거동 시 발생하는 비선형성을 직접 처리한다.  
-* **연산 기법:** Direct Multiple Shooting 기술을 적용하여 연속 시간 동역학을 이산화한다.  
-* **솔버:** Sequential Quadratic Programming(SQP) 방식을 채택하며, 내부 QP 문제는 qpOASES 솔버를 통해 실시간으로 해결한다.  
-* **효율성:** ACADO 툴킷을 사용하여 특정 문제 구조에 최적화된 고속 C-code를 생성하여 활용한다.  
-  
-#### 3.3. Robust Linear MPC (RMPC)  
-외란 신호가 유계($\|w\|_{\infty} \le 1$)되어 있다고 가정하는 Minimax 최적화를 수행한다.  
-* **Feedback Predictions:** 보수적인 오픈루프 제어를 지양하기 위해 $U = LW + V$ 형태의 피드백 파라미터화를 도입한다.  
-* **효율성:** Multiparametric-explicit 솔루션을 통해 제어 법칙을 오프라인에서 미리 계산된 Piecewise Affine 함수로 변환함으로써 연산 부하를 최소화한다.  
-  
+### 3. MPC for Multi-rotor Systems  
+멀티로터 시스템의 정밀한 궤적 추종을 위한 MPC 프레임워크를 논하고자 한다. 전체 시스템은 모델링, Linear MPC, Nonlinear MPC, Robust MPC로 확장되며, 각 단계는 이론적 설계와 ROS 기반의 실시간 구현 및 검증 과정을 포함한다.
+
+### 3.1. Multirotor System Model  
+멀티로터를 6자유도(DoF)를 가진 강체로 모델링하고자 한다. 고정된 관성 좌표계 $W$와 기체에 부착된 동체 좌표계 $B$에 대하여, 좌표계 $B$의 원점의 위치를 $p$와 회전 행렬을 $R$로 나타낸다. 또한, 기체의 상태 벡터 $x$는 위치, 속도, 자세(Roll, Pitch, Yaw), 각속도로 정의되며, 제어 입력 $u$는 총 추력(T)과 자세각 명령(Roll, Pitch)으로 구성된다.  
+이 모델에서는 1차 시스템 거동을 통해 원하는 롤 및 피치 각도 $\phi_d, \theta_d$를 추적할 수 있는 저수준 자세 제어기가 있다고 가정한다. 이러한 1차 inner-loop 근사는 MPC가 저수준 제어기의 거동을 고려할 수 있도록 충분한 정보를 제공한다. 이때, 내측 루프의 1차 파라미터는 전형적인 시스템 식별 기법을 통해 식별될 수 있다.  
+
+### 3.2. Linear MPC  
+Linear MPC을 공식으로 어떻게 다루냐에 따른 멀티 로터 시스템의 궤도 추적과 ROS로의 통합 과정을 다루고자 한다. 이는 다루고자 하는 최적화 문제에 대하여 CVXGEN freamework를 사용하여 C-code 솔버를 만들어서 해결할 수 있다. CVXGEN은 convex optimization 문제를 해결하기 위한 고속 솔버를 생성한다. 
+$\min\limits_{U, X} \left( \sum_{k=0}^{N-1} (x_k - x_{ref,k})^T Q_x (x_k - x_{ref,k}) + (u_k - u_{ref,k})^T R_u (u_k - u_{ref,k}) + (u_k - u_{k-1})^T R_{\Delta} (u_k - u_{k-1}) \right) + (x_N - x_{ref,N})^T P (x_N - x_{ref,N})$  
+해당 식과 여러 제약 조건들을 활용하여 솔버를 생성할 수 있고, 이에 관한 아이디어들은 다음과 같다.
+
+######여기서부터!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
+
+
+## 3.2.1. Attitude Loop Parameters Identification  
+MPC가 생성한 자세 명령을 내부 루프가 어떻게 추종하는지 정확히 파악하는 것은 전체 시스템의 성능을 좌우한다. 우선 내부 자세 제어기의 거동을 1차 시스템으로 근사화하여 모델링에 반영하고자 한다.  
+$$\dot{\phi} = \frac{1}{\tau_{\phi}}(K_{\phi}\phi_{d} - \phi)$$  
+이때 $\tau$와 $K$ 파라미터를 식별하기 위해 실제 비행 데이터를 수집한다. Vicon과 같은 모션 캡처 시스템을 통해 얻은 실제 자세 데이터와 입력 명령 데이터를 기반으로 Least Squares 등의 시스템 식별 기법을 적용하여, 실제 기체의 반응 특성을 모델에 정밀하게 투영한다.  
+
+## 3.2.2. Linearization, Decoupling and Discretization  
+실시간 최적화를 위해 비선형 동역학 식을 호버링 조건(Roll, Pitch $\approx 0$, Yaw 정렬)에서 선형화한다. 선형화된 모델은 $x, y, z$ 및 $yaw$의 4개 하위 시스템으로 분리되어 계산 복잡도를 획기적으로 낮춘다. 또한, 디지털 컴퓨터에서의 구현을 위해 연속 시간 모델을 이산 시간 모델로 변환한다. 이때 오일러 적분 대신 행렬 지수 함수를 사용한 Exact Discretization 기법을 적용하여 샘플링에 의한 오차를 최소화한다.  
+$$x_{k+1} = A_d x_k + B_d u_k$$  
+
+## 3.2.3. ROS Integration  
+설계된 Linear MPC는 ROS 환경에서 노드 형태로 통합된다.  
+- 통신 구조: 제어기 노드는 nav_msgs/Odometry 메시지를 통해 기체의 현재 상태를 구독하고, 계산된 최적 제어 입력을 RollPitchYawRateThrust 커스텀 메시지 형태로 발행(Publish)하여 MAVROS를 통해 FCU로 전달한다.
+- 동적 파라미터 튜닝: dynamic_reconfigure 패키지를 활용하여 비행 중에도 가중치 행렬($Q, R$) 등의 제어 파라미터를 실시간으로 조정할 수 있도록 설계되었다. 이는 실험 현장에서 즉각적인 튜닝을 가능하게 하여 개발 효율을 높인다.  
+
+## 3.2.4 Experimental Results  
+Linear MPC의 성능 검증을 위해 'Firefly' 헥사콥터를 이용한 비행 실험을 수행하였다. Vicon 시스템을 통해 얻은 정밀한 위치 정보를 바탕으로 공격적인 궤적 추종 성능을 평가하였다. 실험 결과, 급격한 방향 전환이 포함된 궤적에서도 낮은 추적 오차를 보였으며, 외부에서 줄을 당겨 인위적인 외란을 가했을 때도 신속하게 원래 위치로 복귀하는 외란 제거 성능을 입증하였다.  
+
+### 3.3. Nonlinear MPC
+선형 모델의 한계를 극복하고 기체의 비선형 동역학을 온전히 활용하기 위해 NMPC를 적용한다. 이는 고속 비행이나 급격한 기동과 같이 선형화 가정이 깨지는 영역에서도 우수한 제어 성능을 보장한다.  
+
+## 3.3.1. ROS Integration  
+Nonlinear MPC의 구현은 Linear MPC와 유사한 ROS 통신 구조를 따르지만, 핵심인 최적화 솔버에서 차이가 있다.  
+- ACADO Toolkit: 실시간 비선형 최적화를 수행하기 위해 ACADO Toolkit을 사용한다. 이는 최적화 문제를 기호적으로 분석하여 고도로 최적화된 C 코드를 생성해준다.  
+- Code Generation: 생성된 코드는 qpOASES와 같은 QP 솔버와 결합되어 ROS 노드 내에서 수 밀리초(ms) 이내에 비선형 최적해를 도출한다. 이를 통해 온보드 컴퓨터의 제한된 연산 자원 내에서도 Receding Horizon Control을 실시간으로 수행할 수 있다.  
+
+## 3.3.2. Experimental Results  
+NMPC의 검증은 Linear MPC보다 더욱 Aggressive maneuvers인 시나리오에서 수행되었다. 예를 들어, 고속의 8자 비행이나 Helix 상승 비행과 같은 과도한 자세 변화가 요구되는 궤적에서 실험을 진행하였다. 결과적으로 NMPC는 전체 비행 영역에서 예측 모델의 정확성을 유지하며, Linear MPC 대비 향상된 추종 정밀도와 동적 반응성을 보여주었다.  
+
+## 3.3.3. Robust Linear Model Predictive Control for Multirotor System  
+실제 환경에서는 바람과 같은 예측 불가능한 외란이 존재하므로, 이에 대한 Robustness가 요구된다. 이에 관하여 튜브 기반(Tube-based) 또는 Minimax 접근 방식을 응용한 Robust Linear MPC를 다루고자 한다.
+
+- 실험 셋업: 구조적으로 개조된 'AscTec Hummingbird (ASLquad)'를 사용하였으며, 강력한 외란 조건을 모사하기 위해 80W급 전기 팬을 사용하여 기체에 지속적인 풍압을 가했다.
+
+- 검증 결과: 강인 제어기는 외란이 존재하는 상황에서도 상태 변수가 허용된 튜브 내에 머물도록 제어 입력을 조절하였다. 특히 팬 앞을 지나가는 나선형 궤적 실험과 무거운 화물을 매달고 비행하는 실험에서, 일반적인 MPC 대비 월등히 안정적인 궤적 유지 성능을 확인하였다.
+
 ---  
   
-### 4. ROS 기반의 실전 구현 (Implementation)  
-이론적 알고리즘을 실시간 시스템에 통합하기 위한 구체적인 아키텍처를 제시한다.  
-  
-* **계층적 제어 (Cascade Structure):** Inner-loop는 Pixhawk에서 저수준 태스크를 수행하고, Outer-loop는 온보드 컴퓨터(NUC, ODROID)에서 MPC 알고리즘을 실행한다.  
-* **연산 효율화:** Linear MPC는 CVXGEN을 통해 생성된 고속 솔버를 사용하며, 100Hz 수준의 고주파수 제어를 달성한다.  
-* **통신 아키텍처:** MAVROS를 통해 Pixhawk와 온보드 컴퓨터 간 MAVLink 메시지를 송수신하며, 센서 퓨전 결과인 Odometry 메시지를 활용한다.  
-  
+### 4. Model-based Trajectory Tracking Controller for Fixed-wing
+UAVs  
+
+
+### 4.1 Fixed-wing flight dynamics & identification  
+ 
+
+## 4.1.1 Model identificaiton
+
+
+### 4.2 Nonlinear MPC  
+
+
+## 4.2.1 ROS Integration  
+
+
+## 4.2.2 Experimental Results  
+
+
+
 ---  
   
 ### 5. 결론 및 고찰  
@@ -109,4 +151,5 @@ UAV의 고속 비행이나 급격한 거동 시 발생하는 비선형성을 직
 **[Update - Time Log]**  
 * 2026.01.24: [Draft] 전체적인 내용(part 1,2,3,4,5) 리딩 완료 및 초안 작성  
 * 2026.01.28: [Ver_1] part 2 수식 및 관련 내용 추가
+* 2026.02.02: [Ver_2] part 3 수식 및 관련 내용 추가
 * 2026.01.: [Final Ver] 
