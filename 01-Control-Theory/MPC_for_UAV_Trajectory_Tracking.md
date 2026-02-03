@@ -74,27 +74,30 @@ $\mathcal{X} = \mathcal{A}x_{k|k} + \mathcal{B}\mathcal{V} + (\mathcal{G}+\mathc
 ### 3.2. Linear MPC  
 Linear MPC을 공식으로 어떻게 다루냐에 따른 멀티 로터 시스템의 궤도 추적과 ROS로의 통합 과정을 다루고자 한다. 이는 다루고자 하는 최적화 문제에 대하여 CVXGEN freamework를 사용하여 C-code 솔버를 만들어서 해결할 수 있다. CVXGEN은 convex optimization 문제를 해결하기 위한 고속 솔버를 생성한다. 
 $\min\limits_{U, X} \left( \sum_{k=0}^{N-1} (x_k - x_{ref,k})^T Q_x (x_k - x_{ref,k}) + (u_k - u_{ref,k})^T R_u (u_k - u_{ref,k}) + (u_k - u_{k-1})^T R_{\Delta} (u_k - u_{k-1}) \right) + (x_N - x_{ref,N})^T P (x_N - x_{ref,N})$  
-해당 식과 여러 제약 조건들을 활용하여 솔버를 생성할 수 있고, 이에 관한 아이디어들은 다음과 같다.
-
-######여기서부터!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
-
+해당 식과 여러 제약 조건들을 활용하여 솔버를 생성할 수 있고, 이에 관한 아이디어들은 다음과 같다.  
 
 ## 3.2.1. Attitude Loop Parameters Identification  
-MPC가 생성한 자세 명령을 내부 루프가 어떻게 추종하는지 정확히 파악하는 것은 전체 시스템의 성능을 좌우한다. 우선 내부 자세 제어기의 거동을 1차 시스템으로 근사화하여 모델링에 반영하고자 한다.  
-$$\dot{\phi} = \frac{1}{\tau_{\phi}}(K_{\phi}\phi_{d} - \phi)$$  
-이때 $\tau$와 $K$ 파라미터를 식별하기 위해 실제 비행 데이터를 수집한다. Vicon과 같은 모션 캡처 시스템을 통해 얻은 실제 자세 데이터와 입력 명령 데이터를 기반으로 Least Squares 등의 시스템 식별 기법을 적용하여, 실제 기체의 반응 특성을 모델에 정밀하게 투영한다.  
+우선 제어 대상 시스템의 선형 모델이 필요하다. 시간에 따른 입력 고도와 실제 고도를 준비하고, 가능한 축에 대해 최대한 많은 작업을 수행한다. 이를 통한 타당성을 검증하여 모델 파라미터 식별을 위한 타당성 퍼센티지를 확인한다.
 
 ## 3.2.2. Linearization, Decoupling and Discretization  
-실시간 최적화를 위해 비선형 동역학 식을 호버링 조건(Roll, Pitch $\approx 0$, Yaw 정렬)에서 선형화한다. 선형화된 모델은 $x, y, z$ 및 $yaw$의 4개 하위 시스템으로 분리되어 계산 복잡도를 획기적으로 낮춘다. 또한, 디지털 컴퓨터에서의 구현을 위해 연속 시간 모델을 이산 시간 모델로 변환한다. 이때 오일러 적분 대신 행렬 지수 함수를 사용한 Exact Discretization 기법을 적용하여 샘플링에 의한 오차를 최소화한다.  
-$$x_{k+1} = A_d x_k + B_d u_k$$  
+호버링 조건 및 작은 자세각 가정 하에 비선형 시스템을 선형화된 상태 공간 방정식 식  
+$$
+\begin{aligned}
+\begin{bmatrix} \dot{p}(t) \\ \dot{v}(t) \\ \dot{\phi}(t) \\ \dot{\theta}(t) \end{bmatrix} &= \begin{bmatrix} 0_{3\times3} & I_{3\times3} & 0_{3\times1} & 0_{3\times1} \\ 0_{3\times3} & -\text{diag}(A_{x}, A_{y}, A_{z}) & \begin{smallmatrix} 0 \\ -g \\ 0 \end{smallmatrix} & \begin{smallmatrix} g \\ 0 \\ 0 \end{smallmatrix} \\ 0_{1\times3} & 0_{1\times3} & -1/\tau_{\phi} & 0 \\ 0_{1\times3} & 0_{1\times3} & 0 & -1/\tau_{\theta} \end{bmatrix} \begin{bmatrix} p(t) \\ v(t) \\ \phi(t) \\ \theta(t) \end{bmatrix} \\
+&\quad + \begin{bmatrix} 0_{3\times3} & 0_{3\times3} \\ 0_{3\times2} & 0_{3\times1} \\ K_{\phi}/\tau_{\phi} & 0 \\ 0 & K_{\theta}/\tau_{\theta} \end{bmatrix} \begin{bmatrix} \phi_{d}(t) \\ \theta_{d}(t) \\ T(t) \end{bmatrix} + \begin{bmatrix} 0_{3\times3} \\ I_{3\times3} \\ 0 \\ 0 \end{bmatrix} d(t)
+\end{aligned}
+$$로 근사화하기.  
+yaw 동역학을 분리하고, 관성 좌표계 기반의 제어 명령을 회전 행렬 식  
+$$ \begin{aligned}\begin{pmatrix} \phi_{d} \\ \theta_{d} \end{pmatrix} &= \begin{pmatrix} \cos \psi & \sin \psi \\ -\sin \psi & \cos \psi \end{pmatrix} \begin{pmatrix} {}^{W}\phi_{d} \\ {}^{W}\theta_{d} \end{pmatrix}\end{aligned} $$을 통해 기체 바디 좌표계로 변환.  
+추적 성능 향상을 위해 목표 경로의 가속도와 기체 자세를 고려한 feed-forward 보상 식  
+$\tilde{T} = \frac{T+g}{\cos \phi \cos \theta} + {}^B\ddot{z}_d, \quad \tilde{\phi}_d = \frac{g\phi_d - {}^B\ddot{y}_d}{\tilde{T}}, \quad \tilde{\theta}_d = \frac{g\theta_d + {}^B\ddot{x}_d}{\tilde{T}}$을 제어 입력에 적용.  
+연속 시간 모델을 샘플링 시간 $T_s$에 따라 이산화하고, 대수 리카티 방정식을 통해 MPC의 최종 비용 행렬 $P$를 산출. 
 
 ## 3.2.3. ROS Integration  
-설계된 Linear MPC는 ROS 환경에서 노드 형태로 통합된다.  
-- 통신 구조: 제어기 노드는 nav_msgs/Odometry 메시지를 통해 기체의 현재 상태를 구독하고, 계산된 최적 제어 입력을 RollPitchYawRateThrust 커스텀 메시지 형태로 발행(Publish)하여 MAVROS를 통해 FCU로 전달한다.
-- 동적 파라미터 튜닝: dynamic_reconfigure 패키지를 활용하여 비행 중에도 가중치 행렬($Q, R$) 등의 제어 파라미터를 실시간으로 조정할 수 있도록 설계되었다. 이는 실험 현장에서 즉각적인 튜닝을 가능하게 하여 개발 효율을 높인다.  
+제어기와 추정기를 C++ 공유 라이브러리 형태로 구현하여 ROS 노드와 인터페이싱함으로써 시스템을 통합한다. 또한, nav_msgs/Odometry 메시지로 기체 상태를 수신하고 RollPitchYawRateThrust 커스텀 메시지를 통해 제어 명령을 출력한다. 이때 단일 지점 명령 대신 전체 경로 정보를 수신함으로써, 미래 참조치를 반영하여 반응하는 MPC의 예측 제어 장점을 극대화한다. tcpNoDelay 설정을 통해 통신 지연을 최소화하며 RViz를 이용하여 목표 경로와 예측된 기체 상태를 실시간으로 시각화한다.
 
 ## 3.2.4 Experimental Results  
-Linear MPC의 성능 검증을 위해 'Firefly' 헥사콥터를 이용한 비행 실험을 수행하였다. Vicon 시스템을 통해 얻은 정밀한 위치 정보를 바탕으로 공격적인 궤적 추종 성능을 평가하였다. 실험 결과, 급격한 방향 전환이 포함된 궤적에서도 낮은 추적 오차를 보였으며, 외부에서 줄을 당겨 인위적인 외란을 가했을 때도 신속하게 원래 위치로 복귀하는 외란 제거 성능을 입증하였다.  
+NUC i7 온보드 컴퓨터를 탑재한 Firefly 헥사콥터를 사용하고, Vicon 모션 캡처 시스템과 온보드 IMU 데이터를 MSF 프레임워크로 융합하여, 제어기의 실시간 성능을 실험적으로 검증한다. MPC 제어기는 100 Hz의 고주파수로 구동되며, 예측을 위한 호라이즌은 20단계(steps)로 구성한다. 이때 공격적인 경로 추적 테스트를 통해 제어 알고리즘의 안정성과 실제 비행 환경에서의 적용 가능성을 입증한다.  
 
 ### 3.3. Nonlinear MPC
 선형 모델의 한계를 극복하고 기체의 비선형 동역학을 온전히 활용하기 위해 NMPC를 적용한다. 이는 고속 비행이나 급격한 기동과 같이 선형화 가정이 깨지는 영역에서도 우수한 제어 성능을 보장한다.  
