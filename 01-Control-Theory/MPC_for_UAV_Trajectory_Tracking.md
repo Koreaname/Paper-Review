@@ -81,23 +81,69 @@ $\min\limits_{U, X} \left( \sum_{k=0}^{N-1} (x_k - x_{ref,k})^T Q_x (x_k - x_{re
 
 ## 3.2.2. Linearization, Decoupling and Discretization  
 호버링 조건 및 작은 자세각 가정 하에 비선형 시스템을 선형화된 상태 공간 방정식 식  
+
 $$
-\begin{aligned}
-\begin{bmatrix} \dot{p}(t) \\ \dot{v}(t) \\ \dot{\phi}(t) \\ \dot{\theta}(t) \end{bmatrix} &= \begin{bmatrix} 0_{3\times3} & I_{3\times3} & 0_{3\times1} & 0_{3\times1} \\ 0_{3\times3} & -\text{diag}(A_{x}, A_{y}, A_{z}) & \begin{smallmatrix} 0 \\ -g \\ 0 \end{smallmatrix} & \begin{smallmatrix} g \\ 0 \\ 0 \end{smallmatrix} \\ 0_{1\times3} & 0_{1\times3} & -1/\tau_{\phi} & 0 \\ 0_{1\times3} & 0_{1\times3} & 0 & -1/\tau_{\theta} \end{bmatrix} \begin{bmatrix} p(t) \\ v(t) \\ \phi(t) \\ \theta(t) \end{bmatrix} \\
-&\quad + \begin{bmatrix} 0_{3\times3} & 0_{3\times3} \\ 0_{3\times2} & 0_{3\times1} \\ K_{\phi}/\tau_{\phi} & 0 \\ 0 & K_{\theta}/\tau_{\theta} \end{bmatrix} \begin{bmatrix} \phi_{d}(t) \\ \theta_{d}(t) \\ T(t) \end{bmatrix} + \begin{bmatrix} 0_{3\times3} \\ I_{3\times3} \\ 0 \\ 0 \end{bmatrix} d(t)
-\end{aligned}
-$$로 근사화하기.  
-yaw 동역학을 분리하고, 관성 좌표계 기반의 제어 명령을 회전 행렬 식  
-$$ \begin{aligned}\begin{pmatrix} \phi_{d} \\ \theta_{d} \end{pmatrix} &= \begin{pmatrix} \cos \psi & \sin \psi \\ -\sin \psi & \cos \psi \end{pmatrix} \begin{pmatrix} {}^{W}\phi_{d} \\ {}^{W}\theta_{d} \end{pmatrix}\end{aligned} $$을 통해 기체 바디 좌표계로 변환.  
-추적 성능 향상을 위해 목표 경로의 가속도와 기체 자세를 고려한 feed-forward 보상 식  
-$\tilde{T} = \frac{T+g}{\cos \phi \cos \theta} + {}^B\ddot{z}_d, \quad \tilde{\phi}_d = \frac{g\phi_d - {}^B\ddot{y}_d}{\tilde{T}}, \quad \tilde{\theta}_d = \frac{g\theta_d + {}^B\ddot{x}_d}{\tilde{T}}$을 제어 입력에 적용.  
-연속 시간 모델을 샘플링 시간 $T_s$에 따라 이산화하고, 대수 리카티 방정식을 통해 MPC의 최종 비용 행렬 $P$를 산출. 
+\begin{bmatrix} 
+\dot{\mathbf{p}}(t) \\ 
+\dot{\mathbf{v}}(t) \\ 
+\dot{\phi}(t) \\ 
+\dot{\theta}(t) 
+\end{bmatrix} = 
+\begin{bmatrix} 
+\mathbf{0}_{3\times3} & \mathbf{I}_{3\times3} & \mathbf{0}_{3\times1} & \mathbf{0}_{3\times1} \\ 
+\mathbf{0}_{3\times3} & -\text{diag}(A_x, A_y, A_z) & \begin{bmatrix} 0 \\ -g \\ 0 \end{bmatrix} & \begin{bmatrix} g \\ 0 \\ 0 \end{bmatrix} \\ 
+\mathbf{0}_{1\times3} & \mathbf{0}_{1\times3} & -1/\tau_\phi & 0 \\ 
+\mathbf{0}_{1\times3} & \mathbf{0}_{1\times3} & 0 & -1/\tau_\theta 
+\end{bmatrix} 
+\begin{bmatrix} 
+\mathbf{p}(t) \\ 
+\mathbf{v}(t) \\ 
+\phi(t) \\ 
+\theta(t) 
+\end{bmatrix} + 
+\begin{bmatrix} 
+\mathbf{0}_{3\times1} & \mathbf{0}_{3\times1} & \mathbf{0}_{3\times1} \\ 
+\mathbf{0}_{3\times1} & \mathbf{0}_{3\times1} & \mathbf{0}_{3\times1} \\ 
+K_\phi/\tau_\phi & 0 & 0 \\ 
+0 & K_\theta/\tau_\theta & 0 
+\end{bmatrix} 
+\begin{bmatrix} 
+\phi_d(t) \\ 
+\theta_d(t) \\ 
+T(t) 
+\end{bmatrix} + 
+\begin{bmatrix} 
+\mathbf{0}_{3\times3} \\ 
+\mathbf{I}_{3\times3} \\ 
+\mathbf{0}_{1\times3} \\ 
+\mathbf{0}_{1\times3} 
+\end{bmatrix} 
+\mathbf{d}(t)
+$$
+
+로 근사화하여 yaw 동역학을 분리하고, 관성 좌표계 기반의 제어 명령을 회전 행렬 식  
+
+$$ \begin{pmatrix}
+\phi_d \\
+\theta_d
+\end{pmatrix} = \begin{pmatrix}
+\cos \psi & \sin \psi \\
+-\sin \psi & \cos \psi
+\end{pmatrix} \begin{pmatrix}
+{}^W \phi_d \\
+{}^W \theta_d
+\end{pmatrix} $$
+
+을 통해 동체 좌표계로 변환한다.  
+또한, 추적 성능 향상을 위해 목표 경로의 가속도와 기체 자세를 고려한 feed-forward 보상 식  
+$\tilde{T} = \frac{T+g}{\cos \phi \cos \theta} + {}^B\ddot{z}_d, \quad \tilde{\phi}_d = \frac{g\phi_d - {}^B\ddot{y}_d}{\tilde{T}}, \quad \tilde{\theta}_d = \frac{g\theta_d + {}^B\ddot{x}_d}{\tilde{T}}$을 제어 입력에 적용한다.  
+결과적으론 연속 시간 모델을 샘플링 시간 $T_s$에 따라 이산화하고, 대수 리카티 방정식을 통해 MPC의 최종 비용 행렬 $P$를 산출한다. 
 
 ## 3.2.3. ROS Integration  
 제어기와 추정기를 C++ 공유 라이브러리 형태로 구현하여 ROS 노드와 인터페이싱함으로써 시스템을 통합한다. 또한, nav_msgs/Odometry 메시지로 기체 상태를 수신하고 RollPitchYawRateThrust 커스텀 메시지를 통해 제어 명령을 출력한다. 이때 단일 지점 명령 대신 전체 경로 정보를 수신함으로써, 미래 참조치를 반영하여 반응하는 MPC의 예측 제어 장점을 극대화한다. tcpNoDelay 설정을 통해 통신 지연을 최소화하며 RViz를 이용하여 목표 경로와 예측된 기체 상태를 실시간으로 시각화한다.
 
 ## 3.2.4 Experimental Results  
-NUC i7 온보드 컴퓨터를 탑재한 Firefly 헥사콥터를 사용하고, Vicon 모션 캡처 시스템과 온보드 IMU 데이터를 MSF 프레임워크로 융합하여, 제어기의 실시간 성능을 실험적으로 검증한다. MPC 제어기는 100 Hz의 고주파수로 구동되며, 예측을 위한 호라이즌은 20단계(steps)로 구성한다. 이때 공격적인 경로 추적 테스트를 통해 제어 알고리즘의 안정성과 실제 비행 환경에서의 적용 가능성을 입증한다.  
+NUC i7 온보드 컴퓨터를 탑재한 Firefly 헥사콥터를 사용하고, Vicon 모션 캡처 시스템과 온보드 IMU 데이터를 MSF 프레임워크로 융합하여, 제어기의 실시간 성능을 실험적으로 검증한다. MPC 제어기는 100 Hz의 고주파수로 구동되며, 예측을 위한 호라이즌은 20단계로 구성한다. 이때 공격적인 경로 추적 테스트를 통해 제어 알고리즘의 안정성과 실제 비행 환경에서의 적용 가능성을 입증한다.  
 
 ### 3.3. Nonlinear MPC
 선형 모델의 한계를 극복하고 기체의 비선형 동역학을 온전히 활용하기 위해 NMPC를 적용한다. 이는 고속 비행이나 급격한 기동과 같이 선형화 가정이 깨지는 영역에서도 우수한 제어 성능을 보장한다.  
@@ -154,5 +200,6 @@ UAVs
 **[Update - Time Log]**  
 * 2026.01.24: [Draft] 전체적인 내용(part 1,2,3,4,5) 리딩 완료 및 초안 작성  
 * 2026.01.28: [Ver_1] part 2 수식 및 관련 내용 추가
-* 2026.02.02: [Ver_2] part 3 수식 및 관련 내용 추가
+* 2026.02.02: [Ver_2] part 3.2 수식 및 관련 내용 추가
+* 2026.02.02: [Ver_2] part 3.3 수식 및 관련 내용 추가
 * 2026.01.: [Final Ver] 
