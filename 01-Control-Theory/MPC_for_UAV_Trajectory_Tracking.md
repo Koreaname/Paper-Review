@@ -7,7 +7,7 @@
 * **Open Source Code Link:** [Rotary-wing Controller](https://github.com/ethz-asl/mav_control_rw), [Fixed-wing Controller](https://github.com/ethz-asl/mav_control_fw)  
 ---  
 
-### 1. 서론 및 개요 (Introduction)  
+### 1. Introduction  
 본 연구는 로봇 운영 체제(ROS)를 기반으로 무인 항공기(UAV, Unmanned Aerial Vehicle)의 정밀한 궤적 추적을 실현하기 위한 모델 예측 제어(MPC, Model Predictive Controller) 전략을 다룬다. 아래 내용은 크게 멀티로터 시스템과 고정익 UAV 두 가지 기종에 대한 MPC 설계 및 실시간 구현 방법을 기술한다. 
 
 ---  
@@ -146,48 +146,50 @@ $\tilde{T} = \frac{T+g}{\cos \phi \cos \theta} + {}^B\ddot{z}_d, \quad \tilde{\p
 NUC i7 온보드 컴퓨터를 탑재한 Firefly 헥사콥터를 사용하고, Vicon 모션 캡처 시스템과 온보드 IMU 데이터를 MSF 프레임워크로 융합하여, 제어기의 실시간 성능을 실험적으로 검증한다. MPC 제어기는 100 Hz의 고주파수로 구동되며, 예측을 위한 호라이즌은 20단계로 구성한다. 이때 공격적인 경로 추적 테스트를 통해 제어 알고리즘의 안정성과 실제 비행 환경에서의 적용 가능성을 입증한다.  
 
 ### 3.3. Nonlinear MPC
-선형 모델의 한계를 극복하고 기체의 비선형 동역학을 온전히 활용하기 위해 NMPC를 적용한다. 이는 고속 비행이나 급격한 기동과 같이 선형화 가정이 깨지는 영역에서도 우수한 제어 성능을 보장한다.  
+비선형 비행체 모델을 통해 continuous time 비선형 모델 예측 제어기 설계하고자 한다. 이때 일반적인 최적 제어 문제(OCP)를 위해 맞춤형 C 코드 비선형 솔버를 생성성하기 위해 ACADO를 활용한다. 이에 관한 최적화 문제 수식은 다음과 같다.  
+
+$$ \min\limits_{U,X} \int_{t=0}^{T} \left( (x(t)-x_{ref}(t))^T Q_x (x(t)-x_{ref}(t)) + (u(t)-u_{ref}(t))^T R_u (u(t)-u_{ref}(t)) \right) dt + (x(T)-x_{ref}(T))^T P (x(T)-x_{ref}(T)) $$
+
+($$\dot{x} = f(x, u)$$, $$u(t) \in \mathbb{U}$$, $$x(0) = x(t_0)$$)  
 
 ## 3.3.1. ROS Integration  
-Nonlinear MPC의 구현은 Linear MPC와 유사한 ROS 통신 구조를 따르지만, 핵심인 최적화 솔버에서 차이가 있다.  
-- ACADO Toolkit: 실시간 비선형 최적화를 수행하기 위해 ACADO Toolkit을 사용한다. 이는 최적화 문제를 기호적으로 분석하여 고도로 최적화된 C 코드를 생성해준다.  
-- Code Generation: 생성된 코드는 qpOASES와 같은 QP 솔버와 결합되어 ROS 노드 내에서 수 밀리초(ms) 이내에 비선형 최적해를 도출한다. 이를 통해 온보드 컴퓨터의 제한된 연산 자원 내에서도 Receding Horizon Control을 실시간으로 수행할 수 있다.  
+Linear MPC와 동일한 가이드라인(3.2.3)
 
 ## 3.3.2. Experimental Results  
-NMPC의 검증은 Linear MPC보다 더욱 Aggressive maneuvers인 시나리오에서 수행되었다. 예를 들어, 고속의 8자 비행이나 Helix 상승 비행과 같은 과도한 자세 변화가 요구되는 궤적에서 실험을 진행하였다. 결과적으로 NMPC는 전체 비행 영역에서 예측 모델의 정확성을 유지하며, Linear MPC 대비 향상된 추종 정밀도와 동적 반응성을 보여주었다.  
+Linear MPC와 동일한 ROS Framework(3.2.4)
 
 ## 3.3.3. Robust Linear Model Predictive Control for Multirotor System  
-실제 환경에서는 바람과 같은 예측 불가능한 외란이 존재하므로, 이에 대한 Robustness가 요구된다. 이에 관하여 튜브 기반(Tube-based) 또는 Minimax 접근 방식을 응용한 Robust Linear MPC를 다루고자 한다.
-
-- 실험 셋업: 구조적으로 개조된 'AscTec Hummingbird (ASLquad)'를 사용하였으며, 강력한 외란 조건을 모사하기 위해 80W급 전기 팬을 사용하여 기체에 지속적인 풍압을 가했다.
-
-- 검증 결과: 강인 제어기는 외란이 존재하는 상황에서도 상태 변수가 허용된 튜브 내에 머물도록 제어 입력을 조절하였다. 특히 팬 앞을 지나가는 나선형 궤적 실험과 무거운 화물을 매달고 비행하는 실험에서, 일반적인 MPC 대비 월등히 안정적인 궤적 유지 성능을 확인하였다.
+Robust MPC(RMPC)를 다루기 위해 AscTec Hummingbird 쿼드로터(ASLquad)를 사용한다. 또한, 앞서 다룬 소프트웨어와 다르게, RMPC의 구현을 위해 ROS를 기반으로 하는 소프트웨어 프레임워크가 개발되었다. MATLAB은 RMPC의 explicit formulation를 유도하고 계산하는 데 사용되었으며, 알고리즘은 SIMULINK 블록 내에 구현되었다. 그 후 자동 코드 생성 기술을 통해 C-코드를 추출하여 ROS 노드에 통합한다. 실험 방식은 외부 모션 캡처를 통해 전체 상태 피드백이 제공되며 온보드 자세 및 헤딩 추정 시스템의 상대적 방향을 고려하기 위한 정렬 단계도 수행된다. 실험 세팅은 80W 전기 팬을 ASLquad로 향하게 하였고, RMPC는 난류 바람 방해에도 불구하고 나선형 경로를 추적하도록 작동하였다.  
+결과적으로 추적 응답은 정밀하게 유지되며 외부 방해 요소로부터의 영향은 미미하게 관찰된다. box-constraints 설정은 제어기가 바람 방해의 동역학을 모르는 상태에서도 정밀한 나선형 경로 추적이 가능함을 보여준다.(방해되는 영향 자체를 bounded하게 처리하므로)
 
 ---  
   
 ### 4. Model-based Trajectory Tracking Controller for Fixed-wing
-UAVs  
-
+고정익 무인기의 평면상 횡방향 위치 제어를 위한 모델링, closed-loop 저수준 시스템 식별 방법론, 일반적인 형태의 high-level 비선형 모델 예측 경로 추적 제어기에 필요한 제어 목표 설계를 다룬다.
 
 ### 4.1 Fixed-wing flight dynamics & identification  
- 
+앞서 다룬 방식과 동일하게 관성 좌표계 $I$와 동체 좌표계 $B$에서 다루며, 모델에 slip이 적절하게 조절되도록 저수준 제어가 설계되었다. 이에 따라 UAV의 위치($n, e$), 요 각도($\psi$), 롤 각도($\phi$) 등을 포함한 동역학 방정식을 다음 식과 같이 다룬다.  
+ $$\dot{n} = V \cos\psi + w_n$$, $$\dot{e} = V \sin\psi + w_e$$, $$\dot{\psi} = \frac{g \tan\phi}{V}$$, $$\dot{\phi} = p$$, $$\dot{p} = b_0 \phi_r - a_1 p - a_0 \phi$$
+이때 참조치($\phi_r$)에 대한 응답을 모델링하기 위해  연산 효율성을 고려하여 2차 시스템을 채택한다.(4.1.1) 이에 관하여, 차수가 증가할 때마다 제어 최적화 문제의 차원 역시 증가하므로 계산 비용이 커지게 된다.
 
 ## 4.1.1 Model identificaiton
+Pixhawk와 같은 상용 오토파일럿의 폐루프 응답을 식별하기 위한 기본 방법론을 다룬다. Fig 15와 같은 PID 구조는 TECS와 NMPC에 대한 저수준 closed loop 시스템 일반적인 구조를 보여준다. 결국 자세 명령에 반응하는 동적 응답을 식별해야 하는데, 잘 튜닝된 저수준 제어기가 마련될 경우 이를 피칭 동역학 및 대기 속도 식별에도 동일한 절차로 처리할 수 있다. 이 과정에서 효율적인 데이터 수집을 위해 주파수 스윕보다 비행 시간이 짧은 2-1-1 modified doublet(동일한 비행 시간 내 더 많은 데이터 수집)을 활용하며, 주파수 스윕과 대등하게 주파수 및 식별 방식에 적합한 식별 입력을 제공한다.(데이터 세트는 논문 속 별첨된 MATLAB script를 활용)  
 
+@@@@@@@@@@@@@@@ 여기서 부터 !!!!!!!!!!!!!!!
 
 ### 4.2 Nonlinear MPC  
-
+ACADO 툴킷을 사용하여 최적 제어 문제(OCP)를 정식화하고 고속 C 코드를 생성한다. Dubins 경로(직선 및 호)를 기반으로 위치 오차($e_t$)와 코스 오차($e_\chi$)를 최소화하도록 목적 함수를 구성하며, 시불변 경로 추적(time-invariant trajectory tracking) 특성을 확보한다.
 
 ## 4.2.1 ROS Integration  
-
+연산 부하를 처리하기 위해 ODROID-U3 싱글 보드 컴퓨터를 탑재하고, MAVROS를 통해 Pixhawk 오토파일럿과 통신한다. 고층 NMPC 루프는 10~20Hz 주기로 구동되며, UART 직렬 통신을 통해 제어 참조치를 실시간으로 전달한다.
 
 ## 4.2.2 Experimental Results  
-
+무게 2.65kg의 Techpod UAV를 사용하여 성능을 검증한다. NMPC는 ODROID-U3에서 평균 13ms의 계산 시간을 기록하며, 박스 패턴 및 복잡한 Dubins 경로 추적 실험에서 위치 오차를 3m 이내로 유지하는 정밀한 제어 성능을 입증한다.
 
 
 ---  
   
-### 5. 결론 및 고찰  
+### 5. Conclusion 
 본 논문은 MPC가 ROS 프레임워크 내에서 실제 드론 시스템의 성능을 극대화할 수 있음을 증명하였다. 학부연구생으로서 분석한 심화 활용 방안은 다음과 같다.  
   
 첫째, **적응형 제어와의 결합** 필요성이다. RMPC의 보수적 한계를 극복하기 위해 강화학습이나 적응형 제어 기법을 결합하여 가중치 행렬($Q, R$)을 실시간 업데이트하는 연구가 수반되어야 한다.  
@@ -201,5 +203,5 @@ UAVs
 * 2026.01.24: [Draft] 전체적인 내용(part 1,2,3,4,5) 리딩 완료 및 초안 작성  
 * 2026.01.28: [Ver_1] part 2 수식 및 관련 내용 추가
 * 2026.02.02: [Ver_2] part 3.2 수식 및 관련 내용 추가
-* 2026.02.02: [Ver_2] part 3.3 수식 및 관련 내용 추가
+* 2026.02.04: [Ver_3] part 3.3 수식 및 관련 내용 추가
 * 2026.01.: [Final Ver] 
