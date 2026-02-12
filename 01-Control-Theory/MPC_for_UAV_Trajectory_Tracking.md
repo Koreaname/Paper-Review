@@ -76,10 +76,10 @@ Linear MPC을 공식으로 어떻게 다루냐에 따른 멀티 로터 시스템
 $\min\limits_{U, X} \left( \sum_{k=0}^{N-1} (x_k - x_{ref,k})^T Q_x (x_k - x_{ref,k}) + (u_k - u_{ref,k})^T R_u (u_k - u_{ref,k}) + (u_k - u_{k-1})^T R_{\Delta} (u_k - u_{k-1}) \right) + (x_N - x_{ref,N})^T P (x_N - x_{ref,N})$  
 해당 식과 여러 제약 조건들을 활용하여 솔버를 생성할 수 있고, 이에 관한 아이디어들은 다음과 같다.  
 
-## 3.2.1. Attitude Loop Parameters Identification  
+### 3.2.1. Attitude Loop Parameters Identification  
 우선 제어 대상 시스템의 선형 모델이 필요하다. 시간에 따른 입력 고도와 실제 고도를 준비하고, 가능한 축에 대해 최대한 많은 작업을 수행한다. 이를 통한 타당성을 검증하여 모델 파라미터 식별을 위한 타당성 퍼센티지를 확인한다.
 
-## 3.2.2. Linearization, Decoupling and Discretization  
+### 3.2.2. Linearization, Decoupling and Discretization  
 호버링 조건 및 작은 자세각 가정 하에 비선형 시스템을 선형화된 상태 공간 방정식 식  
 
 $$
@@ -139,10 +139,10 @@ $$ \begin{pmatrix}
 $\tilde{T} = \frac{T+g}{\cos \phi \cos \theta} + {}^B\ddot{z}_d, \quad \tilde{\phi}_d = \frac{g\phi_d - {}^B\ddot{y}_d}{\tilde{T}}, \quad \tilde{\theta}_d = \frac{g\theta_d + {}^B\ddot{x}_d}{\tilde{T}}$을 제어 입력에 적용한다.  
 결과적으론 연속 시간 모델을 샘플링 시간 $T_s$에 따라 이산화하고, 대수 리카티 방정식을 통해 MPC의 최종 비용 행렬 $P$를 산출한다. 
 
-## 3.2.3. ROS Integration  
+### 3.2.3. ROS Integration  
 제어기와 추정기를 C++ 공유 라이브러리 형태로 구현하여 ROS 노드와 인터페이싱함으로써 시스템을 통합한다. 또한, nav_msgs/Odometry 메시지로 기체 상태를 수신하고 RollPitchYawRateThrust 커스텀 메시지를 통해 제어 명령을 출력한다. 이때 단일 지점 명령 대신 전체 경로 정보를 수신함으로써, 미래 참조치를 반영하여 반응하는 MPC의 예측 제어 장점을 극대화한다. tcpNoDelay 설정을 통해 통신 지연을 최소화하며 RViz를 이용하여 목표 경로와 예측된 기체 상태를 실시간으로 시각화한다.
 
-## 3.2.4 Experimental Results  
+### 3.2.4 Experimental Results  
 NUC i7 온보드 컴퓨터를 탑재한 Firefly 헥사콥터를 사용하고, Vicon 모션 캡처 시스템과 온보드 IMU 데이터를 MSF 프레임워크로 융합하여, 제어기의 실시간 성능을 실험적으로 검증한다. MPC 제어기는 100 Hz의 고주파수로 구동되며, 예측을 위한 호라이즌은 20단계로 구성한다. 이때 공격적인 경로 추적 테스트를 통해 제어 알고리즘의 안정성과 실제 비행 환경에서의 적용 가능성을 입증한다.  
 
 ### 3.3. Nonlinear MPC
@@ -152,13 +152,13 @@ $$ \min\limits_{U,X} \int_{t=0}^{T} \left( (x(t)-x_{ref}(t))^T Q_x (x(t)-x_{ref}
 
 ($$\dot{x} = f(x, u)$$, $$u(t) \in \mathbb{U}$$, $$x(0) = x(t_0)$$)  
 
-## 3.3.1. ROS Integration  
+### 3.3.1. ROS Integration  
 Linear MPC와 동일한 가이드라인(3.2.3)
 
-## 3.3.2. Experimental Results  
+### 3.3.2. Experimental Results  
 Linear MPC와 동일한 ROS Framework(3.2.4)
 
-## 3.3.3. Robust Linear Model Predictive Control for Multirotor System  
+### 3.3.3. Robust Linear Model Predictive Control for Multirotor System  
 Robust MPC(RMPC)를 다루기 위해 AscTec Hummingbird 쿼드로터(ASLquad)를 사용한다. 또한, 앞서 다룬 소프트웨어와 다르게, RMPC의 구현을 위해 ROS를 기반으로 하는 소프트웨어 프레임워크가 개발되었다. MATLAB은 RMPC의 explicit formulation를 유도하고 계산하는 데 사용되었으며, 알고리즘은 SIMULINK 블록 내에 구현되었다. 그 후 자동 코드 생성 기술을 통해 C-코드를 추출하여 ROS 노드에 통합한다. 실험 방식은 외부 모션 캡처를 통해 전체 상태 피드백이 제공되며 온보드 자세 및 헤딩 추정 시스템의 상대적 방향을 고려하기 위한 정렬 단계도 수행된다. 실험 세팅은 80W 전기 팬을 ASLquad로 향하게 하였고, RMPC는 난류 바람 방해에도 불구하고 나선형 경로를 추적하도록 작동하였다.  
 결과적으로 추적 응답은 정밀하게 유지되며 외부 방해 요소로부터의 영향은 미미하게 관찰된다. box-constraints 설정은 제어기가 바람 방해의 동역학을 모르는 상태에서도 정밀한 나선형 경로 추적이 가능함을 보여준다.(방해되는 영향 자체를 bounded하게 처리하므로)
 
@@ -172,7 +172,7 @@ Robust MPC(RMPC)를 다루기 위해 AscTec Hummingbird 쿼드로터(ASLquad)를
  $$\dot{n} = V \cos\psi + w_n$$, $$\dot{e} = V \sin\psi + w_e$$, $$\dot{\psi} = \frac{g \tan\phi}{V}$$, $$\dot{\phi} = p$$, $$\dot{p} = b_0 \phi_r - a_1 p - a_0 \phi$$  
 이때 참조치($\phi_r$)에 대한 응답을 모델링하기 위해  연산 효율성을 고려하여 2차 시스템을 채택한다.(4.1.1) 이에 관하여, 차수가 증가할 때마다 제어 최적화 문제의 차원 역시 증가하므로 계산 비용이 커지게 된다.
 
-## 4.1.1 Model identificaiton
+### 4.1.1 Model identificaiton
 Pixhawk와 같은 상용 오토파일럿의 폐루프 응답을 식별하기 위한 기본 방법론을 다룬다. Fig 15와 같은 PID 구조는 TECS와 NMPC에 대한 저수준 closed loop 시스템 일반적인 구조를 보여준다. 결국 자세 명령에 반응하는 동적 응답을 식별해야 하는데, 잘 튜닝된 저수준 제어기가 마련될 경우 이를 피칭 동역학 및 대기 속도 식별에도 동일한 절차로 처리할 수 있다. 이 과정에서 효율적인 데이터 수집을 위해 주파수 스윕보다 비행 시간이 짧은 2-1-1 modified doublet(동일한 비행 시간 내 더 많은 데이터 수집)을 활용하며, 주파수 스윕과 대등하게 주파수 및 식별 방식에 적합한 식별 입력을 제공한다.(데이터 세트는 논문 속 별첨된 MATLAB script를 활용)  
 
 ### 4.2 Nonlinear MPC  
@@ -188,10 +188,10 @@ $$e_\chi = \chi_d - \chi$$
 
 또한, Dubins 경로는 고정익 UAV 미션에서 원하는 비행 기동을 설명하는데 유용하다. 즉, 위 과정으로부터 Dubins 경로를 기반으로 위치 오차($e_t$)와 코스 오차($e_\chi$)를 최소화하도록 목적 함수를 구성하며, time-invariant trajectory tracking 특성을 확보한다. 이 과정에서 시간 이산화에 따른 가중치 중복 적용을 피하고자 초기 모든 references는 0으로 설정해야 한다. 이후 적용시 이차 함수로 가중치를 부여하므로 초기 호라이즌은 이후 호라이즌 값보다 더 무겁게 패널티가 부여된다.
 
-## 4.2.1 ROS Integration  
+### 4.2.1 ROS Integration  
 연산 부하를 처리하기 위해 ODROID-U3 싱글 보드 컴퓨터를 탑재하고, MAVROS를 통해 Pixhawk 오토파일럿과 통신한다. 고층 NMPC 루프는 10~20Hz 주기로 구동되며, UART 직렬 통신을 통해 제어 참조치를 실시간으로 전달한다.
 
-## 4.2.2 Experimental Results  
+### 4.2.2 Experimental Results  
 소형 저고도 hand-launchable Techpod UAV를 사용하여 성능을 검증한다. NMPC는 ODROID-U3에서 평균 13ms의 계산 시간을 기록하며, loiter circle로 돌아올 떄까지 overshoot는 최소한으로 관찰하여 1m 미만의 위치 오차 내로 수렴함을 알 수 있다. 또한, 고층 NPMC로부터 박스 패턴 및 복잡한 Dubins 경로 추적 실험에서 위치 오차를 3m 이내로 유지하는 정밀한 제어 성능을 입증한다.
 
 ---  
