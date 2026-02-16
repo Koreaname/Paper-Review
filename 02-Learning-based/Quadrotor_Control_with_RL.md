@@ -18,14 +18,23 @@
 ---
 
 ### 2. Background
-강화학습 문제는 일반적으로 마르코프 결정 과정(MDP)으로 정식화된다.  
-에이전트는 환경과 상호작용하며 현재 상태($s_t$)에서 행동($a_t$)을 취하고, 그에 따른 보상($r_t$)을 받는다. 학습의 목표는 누적 보상의 기댓값을 최대화하는 정책($\pi$)을 찾는 것이다.  
+현재 활용되는 Deterministic policy 최적화는 natural gradient descent를 이용한다. 이는 확률론적 policy보다 낮은 분산(더 안정적), gradient 작성시 단순화, 예측 가능 범위(확률론적은 예측 불가능)이라는 장점으로 인해 활용된다. 이에 따라 Deterministic policy gradient method는 상태 공간을 탐색하는데에 분명한 규칙이 없으므로 좋은 탐색 전략이 필요하다.
 
-기존의 접근법인 DDPG(Deep Deterministic Policy Gradient)와 TRPO(Trust Region Policy Optimization)는 각각 한계가 존재한다.  
-* **DDPG:** Off-policy 알고리즘으로 샘플 효율성은 높으나, 불안정한 학습 특성을 보여 복잡한 쿼드로터 제어에 적용하기 어렵다.  
-* **TRPO:** 확률적 정책을 사용하는 On-policy 알고리즘으로 안정적이지만, 계산 비용이 높고 수렴 속도가 느리다.  
+한편, 강화학습 과정에서는 환경 모델을 사전에 알 수 없는 블랙박스 시스템이나 실제 로봇으로부터 샘플 데이터를 수집한다. 초기 상태 분포 $d_{0}(s)$부터 $T$ 스텝 동안 행동 $a \in \mathcal{A}$를 선택하면 그에 따른 궤적 $(s_{1:T+1}, a_{1:T}, r_{1:T})$을 얻을 수 있다. 여기서 $s \in \mathcal{S}$는 시스템의 상태, $r \in \mathbb{R}$은 현재 상태와 행동에 의해 결정되는 deterministic cost function $R:\mathcal{S}\times\mathcal{A}\rightarrow\mathbb{R}$의 반환값을 의미한다.
 
-이에 따라 본 연구에서는 결정론적 정책의 효율성과 On-policy 방법의 안정성을 결합한 새로운 학습 프레임워크를 제안한다. 이는 고차원 연속 행동 공간을 가진 로봇 제어 문제에 최적화된 접근 방식이다.  
+이 알고리즘 최종 목표는 상태 분포 전반에 걸친 평균 가치를 최소화하는 parameterized policy $\pi_{\theta}$를 찾는 것이다.($\theta$는 policy 파라미터) 학습이 안정적으로 이루어지도록 discount factor $\gamma \in [0, 1)$를 적용하여 상태 가치 함수 $V$(미래의 보상 합)가 무한히 커지지 않고 유한한 값을 가지도록 제한한다. 상태 분포 내의 감가를 무시하고 식을 단순화할 경우, $\theta$에 대한 deterministic policy gradient 수식은 다음과 같이 정의할 수 있다.
+
+$$\nabla_{\theta}L(\pi_{\theta})=\mathbb{E}_{s\sim d^{\pi_{\theta}}(s)}[\nabla_{\theta}\pi_{\theta}(s)\nabla_{a}Q^{\pi_{\theta}}(s,a)|a=\pi_{\theta}(s)]$$
+
+
+
+위 식에서 행동 가치 함수(action-value function) $Q^{\pi_{\theta}}(s_{t},a_{t}) = \mathbb{E}_{s_{t+1}}[r(s_{t},a_{t}) + \gamma V^{\pi_{\theta}}(s_{t+1})]$는 특정 상태 $s_t$에서 임의의 행동 $a_t$를 먼저 취한 후, 이후부터는 계속해서 현재의 정책 $\pi_{\theta}$를 따랐을 때 얻게 되는 기대 가치를 의미한다. 
+
+여기에 baseline function 역할을 하는 상태 가치 함수 $V^{\pi_{\theta}}(s)$를 도입하면, 정책 기울기 수식을 다음과 같이 advantage function $A^{\pi_{\theta}}(s,a)$를 활용한 형태로 다시 쓸 수 있다.
+
+$$\nabla_{\theta}L(\pi_{\theta})=\mathbb{E}_{s\sim d^{\pi_{\theta}}(s)}[\nabla_{\theta}\pi_{\theta}(s)\nabla_{a}A^{\pi_{\theta}}(s,a)|a=\pi_{\theta}(s)]$$
+
+이때 이점 함수는 $A^{\pi_{\theta}}(s,a) = Q^{\pi_{\theta}}(s,a) - V^{\pi_{\theta}}(s)$로 정의된다. 이 식의 결과는 임의의 특정 행동 $a$를 취했을 때 얻는 가치에서 현재 정책 $\pi_{\theta}(s)$가 기본적으로 지시하는 행동을 취했을 때 얻는 가치를 뺀 값으로, 해당 행동을 통해 얻을 수 있는 추가적인 가치적 이득을 나타낸다.
 
 ---
 
@@ -115,4 +124,5 @@ DDPG는 적절한 성능으로 수렴하지 못했고, TRPO는 제안된 방법�
 **Review by 변정우, Aerospace Engineering Undergraduate Researcher ---  
 [Update - Time Log]**
 * 2026.02.13: [Draft] 전체적인 내용(part 1,2,3,4,5) 리딩 완료 및 초안 작성  
-* 2026.02.: [ver_1]
+* 2026.02.16: [ver_1] part 1, 2 수식 및 관련 내용 업데이트
+* 2026.02.: [ver_2]
