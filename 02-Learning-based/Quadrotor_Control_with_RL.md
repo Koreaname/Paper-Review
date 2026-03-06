@@ -22,7 +22,8 @@
 
 한편, 강화학습 과정에서는 환경 모델을 사전에 알 수 없는 블랙박스 시스템이나 실제 로봇으로부터 샘플 데이터를 수집한다. 초기 상태 분포 $d_{0}(s)$부터 $T$ 스텝 동안 행동 $a \in \mathcal{A}$를 선택하면 그에 따른 궤적 $(s_{1:T+1}, a_{1:T}, r_{1:T})$을 얻을 수 있다. 여기서 $s \in \mathcal{S}$는 시스템의 상태, $r \in \mathbb{R}$은 현재 상태와 행동에 의해 결정되는 deterministic cost function $R:\mathcal{S}\times\mathcal{A}\rightarrow\mathbb{R}$의 반환값을 의미한다.
 
-이 알고리즘 최종 목표는 상태 분포 전반에 걸친 평균 가치를 최소화하는 parameterized policy $\pi_{\theta}$를 찾는 것이다.($\theta$는 policy 파라미터) 학습이 안정적으로 이루어지도록 discount factor $\gamma \in [0, 1)$를 적용하여 상태 가치 함수 $V$(미래의 보상 합)가 무한히 커지지 않고 유한한 값을 가지도록 제한한다. 상태 분포 내의 감가를 무시하고 식을 단순화할 경우, $\theta$에 대한 deterministic policy gradient 수식은 다음과 같이 정의할 수 있다.( $$V^{\pi_\theta}(s) = \mathop{\mathbb{E}}\limits_{s_{t+1}, s_{t+2}, \dots} \left[ \sum_{t=t}^{\infty} \gamma^t r_t \mid s_t = s, \pi_\theta \right]$$ )
+이 알고리즘 최종 목표는 상태 분포 전반에 걸친 평균 가치를 최소화하는 parameterized policy $\pi_{\theta}$를 찾는 것이다.($\theta$는 policy 파라미터) 학습이 안정적으로 이루어지도록 discount factor $\gamma \in [0, 1)$를 적용하여 상태 가치 함수 $V$(미래의 보상 합)가 무한히 커지지 않고 유한한 값을 가지도록 제한한다. 상태 분포 내의 감가를 무시하고 식을 단순화할 경우, $\theta$에 대한 deterministic policy gradient 수식은 다음과 같이 정의할 수 있다.  
+($$V^{\pi_\theta}(s) = \mathop{\mathbb{E}}\limits_{s_{t+1}, s_{t+2}, \dots} \left[ \sum_{t=t}^{\infty} \gamma^t r_t \mid s_t = s, \pi_\theta \right]$$ )
 
 $$L(\pi_\theta) = \mathop{\mathbb{E}}\limits_{s_0, s_1, \dots} \left[ \sum_{k=0}^{\infty} \gamma^k r_{t+k} \right] = \int_{\mathcal{S}} d^{\pi_\theta}(s) V^{\pi_\theta}(s) ds$$  
 
