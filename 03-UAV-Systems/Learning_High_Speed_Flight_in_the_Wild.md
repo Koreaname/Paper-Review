@@ -186,5 +186,5 @@ Figure S1–S6, Movie S1–S2 포함.
 **Review by 변정우, Aerospace Engineering Undergraduate Researcher**  
 **[Update - Time Log]**  
 * 2026.02.28: [Draft] 전체적인 내용 리딩 완료 및 초안 작성  
-* 2026.03.: [ver_1] part 1, 2 수식 및 관련 내용 업데이트  
+* 2026.03.10: [ver_1] 원문과 비교하여 전반적인 내용 업데이트 
 * 2026.03.: [Final ver] 나머지 내용 내용 업데이트 및 전체적으로 검토
