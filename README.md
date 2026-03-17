@@ -2,7 +2,7 @@
 
 # 📚 Paper Review Repository
 2026년부터 항공우주 제어 및 알고리즘 관련 논문을 읽고 정리하는 공간입니다.  
-Category는 크게 Control-Theory, Learning-based, UAV-Systems로 분류하였습니다.
+Category는 크게 UAM-Systems with Control-Theory와 Optimization with ML,DL,CVX로 분류하였습니다.
 
 | Date | Category | Title | Status |
 | :--- | :--- | :--- | :--- |
