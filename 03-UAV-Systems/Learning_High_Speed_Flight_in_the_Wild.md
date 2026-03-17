@@ -34,13 +34,13 @@
 
 #### B. Controlled Experiments  
   
-FastPlanner와 Reactive baseline은 모두 동일하게 플랫폼 state, stereo depth, 그리고 5 s 앞의 reference state를 goal로 제공받으며, Blind는 reference만 추종하는 난이도 기준선이다. 시뮬레이션은 Flightmare + RotorS Gazebo + Unity에서 수행되었고, forest / narrow gap / disaster / city street 네 환경에서 평가했다. 저속(3 m/s)에서는 성능 차이가 작지만, 속도가 증가하면 baseline은 급격히 붕괴하고 제안 방법은 10 m/s에서 평균 70% 성공률을 유지한다. 특히 재난·도시 환경에서는 조기에 free space 방향으로 steering하면서도 장애물 근처에서는 미세한 reactive correction을 수행하는 능력이 성능 우위의 핵심이다.  
+FastPlanner와 Reactive baseline은 모두 동일하게 플랫폼 state, stereo depth, 그리고 5 s 앞의 reference state를 목표로, Blind는 reference만 추종하는 난이도 기준선이다. 시뮬레이션은 Flightmare + RotorS Gazebo + Unity에서 수행되었고, 숲, 좁은 틈, 재난, 도시 네 환경에서 평가했다. 저속(3 m/s)에서는 성능 차이가 작지만, 속도가 증가하면 baseline은 급격히 붕괴하고 제안 방법은 10 m/s에서 평균 70% 성공률을 유지한다. 특히 재난, 도시 환경에서는 조기에 free space 방향으로 steering하면서도 장애물 근처에서는 미세한 reactive correction을 수행하는 능력을 갖는다. 
 
 ---  
 
 #### C. Computational Cost  
 
-세 방법의 구성별 처리 지연을 측정한 결과(Table 1)는 다음과 같다.  
+세 방법의 구성별 처리 지연을 측정한 결과는 다음과 같다.  
 
 | Method | Pre-processing (ms) | Mapping/NN (ms) | Projection (ms) | Total Latency (ms) | 비고 |  
 |---|---:|---:|---:|---:|---|  
@@ -49,7 +49,7 @@ FastPlanner와 Reactive baseline은 모두 동일하게 플랫폼 state, stereo 
 | Ours (desktop CPU) | 0.1 ± 0.04 | 10.1 ± 1.5 (NN inference) | 0.08 ± 0.01 | 10.3 | GPU 사용 시 2.6 ms로 단축. |  
 | Ours (Jetson TX2) | 0.2 ± 0.1 | 38.9 ± 4.5 | 2.5 ± 1.5 | 41.6 | 온보드 PC 성능 기준. |  
   
-표의 비교는 공정성을 위해 우선 모든 방법을 desktop CPU 기준으로 맞춰 측정하고, 제안 방법에 한해 GPU 추론 시간과 Jetson TX2 온보드 시간을 추가로 함께 제시한다. 여기서 baseline의 pre-processing은 depth map으로부터 point cloud를 만드는 시간이고, 제안 방법의 pre-processing은 depth를 neural network 입력 tensor로 변환하는 시간이다. CPU만 사용해도 제안 방법은 baseline보다 낮은 지연을 보이며, GPU 사용 시 총 latency는 2.6 ms 수준까지 줄어든다. 온보드 기준 총 latency는 41.6 ms로 약 24 Hz 업데이트가 가능하다.  
+표의 비교는 공정성을 위해 우선 모든 방법을 desktop CPU 기준으로 맞춰 측정하고 제안 방법에 한해 GPU 추론 시간과 Jetson TX2 온보드 시간을 추가로 함께 제시한다. 여기서 baseline의 pre-processing은 depth map으로부터 point cloud를 만드는 시간이고 제안 방법의 pre-processing은 depth를 neural network 입력 tensor로 변환하는 시간이다. CPU만 사용해도 제안 방법은 baseline보다 낮은 지연을 보이며, GPU 사용 시 총 latency는 2.6 ms 수준까지 줄어든다. 온보드 기준 총 latency는 41.6 ms로 약 24 Hz 업데이트가 가능하다.  
 
 ---  
 
