@@ -55,18 +55,18 @@ FastPlanner와 Reactive baseline은 모두 동일하게 플랫폼 state, stereo 
 
 #### D. The effect of latency and sensor noise  
 
-이 절의 controlled study는 단일 장애물 회피 과제를 사용한다. 쿼드로터가 일정한 전방 속도로 직진하면서, 제한된 sensing range 안에서 하나의 pole을 측면으로 회피해야 하는 설정이다. 전방 속도는 3~13 m/s 범위에서 변화시키고, ground-truth depth와 stereo-estimated depth 조건을 나누어 latency와 noise의 영향을 비교한다.  
+해당 제어 연구는 단일 장애물 회피 과제를 사용한다. 쿼드로터가 일정한 전방 속도로 직진하면서 제한된 센서 범위 안에서 하나의 pole을 측면으로 회피해야 하는 설정이다. 전방 속도는 3~13 m/s 범위에서 변화시키고, ground-truth depth와 stereo-estimated depth 조건을 나누어 latency와 noise의 영향을 비교한다.  
 
-관련 이론 분석에 대하여 Falanga et al.의 pole avoidance setting을 확장하여, sensing range, sensor latency, processing latency뿐 아니라 회피에 필요한 rotational delay까지 반영한 theoretical maximum speed를 계산했다. Ground-truth depth에서는 모든 방법이 5 m/s까지는 성공했지만, Reactive는 공격적인 primitive 부족으로, FastPlanner는 sub-optimal action 때문에 그 이상에서 급격히 악화되었다. Stereo depth에서는 FastPlanner가 outlier rejection을 위해 2~3회 observation을 필요로 하며 5 m/s 이상에서 사실상 실패했고, Reactive도 current observation 의존성 때문에 7 m/s에서 유의미한 성능 저하를 보였다. 반면 제안 방법은 theoretical limit에 가장 가깝게 동작했으며, 10 m/s에서도 약 10% 수준의 성능 저하만 나타났다.  
+관련 이론 분석에 대하여 Falanga et al.의 pole avoidance setting을 확장하여, sensing range, sensor latency, processing latency뿐 아니라 회피에 필요한 rotational delay까지 반영한 theoretical 최대 속도를 계산했다. Ground-truth depth에서는 모든 방법이 5 m/s까지는 성공했지만, Reactive는 공격적인 primitive 부족으로, FastPlanner는 sub-optimal action 때문에 그 이상에서 급격히 악화되었다. Stereo depth에서는 FastPlanner가 outlier rejection을 위해 2~3회 observation을 필요로 하며 5 m/s 이상에서 사실상 실패했고, Reactive도 current observation 의존성 때문에 7 m/s에서 유의미한 성능 저하를 보였다. 반면 제안 방법은 theoretical limit에 가장 가깝게 동작했으며, 10 m/s에서도 약 10% 수준의 성능 저하만 나타났다.  
 
 ---  
 
 ### 3. Discussion  
 
-기존 자율 비행 시스템은 모듈화를 통해 구현을 단순화하였지만, 모듈간 지연과 오차 누적, 상호작용 부재가 고속 비행에 근본적인 제약을 준다. 본 연구는 감지, 맵핑, 경로계획을 통합한 단일 신경망 함수로 대체하였다. 이 신경망은 depth 이미지, 속도, 자세, 목표 방향을 입력으로 받아 충돌 위험이 낮은 세 가지 궤적을 예측하고, 비용 최소 궤적을 MPC로 추종한다. 이 방법은 모듈 간 통신 없이 한 번의 추론으로 경로를 산출하므로 지연이 크게 줄고, 데이터 기반으로 센서 노이즈에 대한 견고성을 갖는다.  
+기존 자율 비행 시스템은 모듈화를 통해 구현을 단순화하였지만 모듈간 지연과 오차 누적 및 상호작용 부재가 고속 비행에 근본적인 제약을 준다. 이에 따라 해당 연구는 감지, 맵핑, 경로계획을 통합한 단일 신경망 함수로 대체하였다. 이 신경망은 depth 이미지, 속도, 자세, 목표 방향을 입력으로 받아 충돌 위험이 낮은 세 가지 궤적을 예측하고 비용 최소 궤적을 MPC로 추종한다. 이 방법은 모듈 간 통신 없이 한 번의 추론으로 경로를 산출하므로 지연이 크게 줄고 데이터 기반으로 센서 노이즈에 대한 견고성을 갖는다.  
 
 이에 따라 성공 요인을 3가지로 나눌 수 있다.  
-1) 특권 전문가를 통한 모방학습으로 복잡한 다봉 분포를 효율적으로 학습한다.
+1) 모방학습으로 복잡한 다봉 분포를 효율적으로 학습한다.
 2) 다중 모드 출력을 통해 여러 회피 전략을 동시에 고려한다.
 3) 깊이 기반 추상 입력으로 시뮬레이션-현실 차이를 최소화한다.  
 이러한 설계 조합이 고속 비행에서 기존 방법 대비 10배 이상 낮은 실패율을 달성하게 했다.  
