@@ -9,7 +9,7 @@
 
 ### Abstract
 
-이 논문은 Structured Prediction Energy Networks(SPENs)에 관해 다룬다. 이는 구조화된 출력 $y$ 자체에 대해 딥러닝 기반의 에너지 함수 $E_{X}(y)$를 정의하고, 예측 시에는 네트워크 파라미터가 아니라 출력 변수$y$에 대해 역전파를 수행하여 에너지를 반복적으로 최소화하는 것이다. 이 방식은 신경망처럼 $x$ ↦ $y$를 한 번에 통과시키는 것이 아니라, 출력 구조의 상호작용 자체를 딥 아키텍처로 학습할 수 있다는 점이 차별적이다.
+이 논문은 Structured Prediction Energy Networks(SPENs)에 관해 다룬다. 이는 구조화된 출력 $y$ 자체에 대해 딥러닝 기반의 에너지 함수 $E_{X}(y)$를 정의하고, 예측 시에는 네트워크 파라미터가 아니라 출력 변수 $y$에 대해 역전파를 수행하여 에너지를 반복적으로 최소화하는 것이다. 이 방식은 신경망처럼 $x$ ↦ $y$를 한 번에 통과시키는 것이 아니라, 출력 구조의 상호작용 자체를 딥 아키텍처로 학습할 수 있다는 점이 차별적이다.
 
 특히 다중 라벨 분류를 대표 예시로, 라벨 수가 커질 때도 파라미터 수와 예측 1회당 복잡도가 선형적으로 증가하는 구조를 제시한다. 이 과정에서 라벨 사이의 상호작용을 고차(high-order)로 담을 수 있다. 그래프 모델로 표현하면 treewidth가 너무 커져 추론이 불가능해질 때도, SPEN에서는 신경망 안의 비선형 함수로 처리할 수 있다. 또한, 기존 CRF류 접근은 레이블 수 $L$이 커지면 파라미터 수와 추론 비용이 최소 $O(L^2)$ 이상으로 커지는 반면, SPEN은 설계를 잘 하면 표현력은 유지하면서도 복잡도를 $O(L)$ 수준으로 유지할 수 있다.  
 
@@ -33,35 +33,29 @@ Feed-forward 방식은 입력을 바로 출력으로 보내는 방식이라 end-
 
 ### 2. Structured Prediction Energy Networks
 
-논문은 먼저 구조화 예측을 다음과 같은 조합 최적화 문제로 둔다.
+먼저 수식적인 접근으로 구조화 예측을 다음과 같은 조합 최적화 문제로 둔다.
 
 $$\min_{y} E_x(y)  
 \quad\text{subject to } y \in \{0,1\}^{L}.$$  
 
-이는 binary CRF를 포함한 다양한 구조화 예측 문제를 포괄한다. 다만 이 문제를 그대로 풀면 일반적으로 조합 폭발이 발생하므로, 저자들은 출력 공간을 다음처럼 연속 완화한다.
+이는 binary CRF를 포함한 다양한 구조화 예측 문제를 포괄한다. 다만 이 문제를 그대로 풀면 제약 집합이 꽤나 이산적이므로 다음과 같은 조건으로 연속 완화하여 문제를 다룬다.
 
 $$\min_{\bar y} E_x(\bar y)  
 \quad \text{subject to } \bar y \in [0,1]^L$$  
 
-여기서 중요한 점은 $E_x(\bar y)$가 일반적으로 비볼록이라는 사실이다. 따라서 (2)를 정확히 푸는 대신, SPEN은 $\bar y$에 대해 gradient descent를 적용해 근사적인 local minimum을 찾는다. 이때 제약집합 $[0,1]^L$ 안에서 최적화를 수행해야 하므로 다음 두 방법이 가능하다.
+이때 $E_x(\bar y)$가 일반적으로 non-convex다. 따라서 이를 정확히 푸는 대신, SPEN은 $\bar y$에 대해 gradient descent를 적용해 근사적인 local minimum을 찾는다. 이때 제약집합 $[0,1]^L$ 안에서 최적화를 수행해야 하므로, projected gradient descent나 entropic mirror descent를 활용해야 한다.
 
-- projected gradient descent
-- entropic mirror descent
+이 논문에서는 후자를 선택한다. 각 반복점이 항상 $(0,1)^L$ 내부에 머무르므로 경계에서 발산하는 에너지나 loss를 더 안정적으로 다룰 수 있기 때문이다. 다만 이 방식이 항상 거의 0-1에 가까운 해를 돌려준다는 보장은 없다. 따라서 상황에 따라 마지막에 thresholding이나 rounding을 적용하거나 soft prediction을 그대로 유지할 수 있다.  
 
-논문은 후자를 선택한다. 이유는 각 반복점이 항상 $(0,1)^L$ 내부에 머무르므로, 경계에서 발산하는 에너지나 loss를 더 안정적으로 다룰 수 있기 때문이다. 다만 이 방식이 항상 거의 0-1에 가까운 해를 돌려준다는 보장은 없다. 따라서 어떤 응용에서는 마지막에 thresholding이나 rounding을 적용하고, 또 어떤 응용에서는 soft prediction을 그대로 유지할 수 있다.
+또한, $\bar y$를 도입했다고 해서 SPEN이 mean-field variational inference의 marginal probability와 같은 의미를 가진다고 할 순 없다. mean-field는 본래 확률 모델에서 정확한 추론이 어려울 때 variational objective를 유도하는 방식인 반면, SPEN은 그런 확률적 가정을 세우지 않는다. 이들은 분포를 근사하는 것이 아니라 예측 절차 자체가 최소화할 목적함수를 discriminative하게 학습한다.  
 
-여기서의 완화는 posterior inference 문맥의 mean-field와 비슷해 보이지만, 출발점은 다르다. mean-field는 본래 확률 모델에서 정확한 추론이 어려울 때 variational objective를 유도하는 방식인 반면, SPEN은 그런 확률적 가정을 세우지 않는다. 대신 추론 절차가 직접 최소화할 목적함수 자체를 판별적으로 학습한다.
-
-SPEN의 파라미터화는 두 부분으로 나뉜다.
-
-1. Feature network $F(x)$: 입력 $x$를 표현 벡터로 변환한다.
-2. Energy network $E(F(x), \bar y)$: 입력 표현과 출력 후보를 받아 scalar energy를 반환한다.
-
-즉, $$E_x(\bar y) = E(F(x), \bar y)$$이고, 예측 시에는 $F(x)$를 먼저 계산해 둔 뒤 $\bar y$에 대해서만 역전파를 수행한다. 이 덕분에 iterative prediction 동안 입력 쪽 연산을 매번 다시 하지 않아도 된다.
+SPEN의 파라미터화는 Feature network $F(x)$(입력 $x$를 표현 벡터로 변환)와 Energy network $E(F(x), \bar y)$(입력 표현과 출력 후보를 받아 scalar energy를 반환)으로 진행한다. 즉, $$E_x(\bar y) = E(F(x), \bar y)$$이고 예측 시에는 $F(x)$를 먼저 한 번만 계산해 둔 뒤 $y$에 대한 gradient만 계산하면 된다. 이로 인해 iterative prediction에서 입력 쪽 연산을 매번 다시 하지 않아도 된다.  
 
 ---
 
 ### 3. Example SPEN Architecture
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!! 여기서부터 !!!!!!!!!!
 
 논문이 실험 전반에서 사용한 기본 SPEN 아키텍처는 비교적 단순하지만, 핵심 아이디어를 매우 잘 보여준다.
 
@@ -442,7 +436,7 @@ end for
 
 **Review by 변정우, Aerospace Engineering Undergraduate Researcher**  
 **[Update - Time Log]**  
-* 2026.03.18: [Draft] 전체적인 내용 리딩 완료 및 초안 작성
-* 2026..: [ver_1]
+* 2026.03.18: [Draft] 1-4 파트 리딩 완료
+* 2026.03.21: [ver_1] 1-2 파트 글 작성
 * 2026..: [ver_2]
 * 2026..: [Final_ver]
