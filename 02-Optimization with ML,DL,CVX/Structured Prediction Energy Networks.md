@@ -64,24 +64,17 @@ Global energy에서 레이블 간 상호작용을 담당하는 항은 $$E_x^{\te
 
 앞선 수식을 입력과 출력을 함께 쓰는 조건부 global energy로 수식을 변형할 수 있다.  
 
-$$E_x^{\text{cond}}(\bar y) = d_2^\top g(D_1[\bar y; F(x)])$$
+$$E_x^{\text{cond}}(\bar y) = d_2^\top g(D_1[\bar y; F(x)])$$  
 
-정리하면, 이 아키텍처는 입력-레이블 정합성은 local energy로, 레이블-레이블 상호작용은 global energy로 나누어 모델링한다. 이 분해가 SPEN의 해석성과 확장성을 동시에 만든다.
+정리하면 이 아키텍처는 입력-레이블 정합성은 local energy로, 레이블-레이블 상호작용은 global energy로 나누어 모델링한다. 이 분해는 SPEN의 해석성과 확장성을 동시에 갖는다.  
 
-#### 3.1. Conditional Random Fields as SPENs
+#### 3.1. Conditional Random Fields as SPENs  
 
-저자들은 SPEN을 이해하기 쉽게 하기 위해 pairwise CRF와의 관계를 짚는다. 완전연결 pairwise CRF를 생각하면, 데이터 의존 unary와 데이터 비의존 pairwise 항을 갖는 에너지는 대략 다음 꼴이 된다.
+앞서 다룬 SPEN의 원리를 이해하기 쉽게 하기 위해 pairwise CRF와의 관계를 다룬다. fully-connected pairwise CRF를 생각하면 데이터 의존 unary와 데이터 비의존 pairwise 항을 갖는 에너지는 quadratic form인 $$E_x^{\text{crf}}(y) = y^\top S_1 y + s^\top y$$으로 표현할 수 있다.  
 
-$$E_x^{\text{crf}}(y) = y^\top S_1 y + s^\top y$$
+이 수식은 직관적이지만 레이블 수가 커지면 문제가 발생한다. 우선 pairwise 상호작용을 위해 파라미터 수가 최소 $O(L^2)$로 증가하며 이에 따른 추론 비용 역시 빠르게 커진다. 또한, pairwise를 넘어서는 고차 상호작용은 훨씬 비싸고, 설계 과정에선 label dependency를 미리 알아야 sparse graph를 설계할 수 있다.  
 
-이 표현은 직관적이지만, 레이블 수가 커지면 즉시 문제가 드러난다.
-
-- pairwise 상호작용을 위해 파라미터 수가 최소 $O(L^2)$로 증가한다.
-- 추론 비용 역시 빠르게 커진다.
-- practitioners가 label dependency를 미리 알아야 sparse graph를 설계할 수 있다.
-- pairwise를 넘어서는 고차 상호작용은 훨씬 비싸다.
-
-SPEN은 이런 제약을 우회한다. 특히 $C_1$의 affine measurement는 단순한 low-rank pairwise factorization보다 더 넓은 종류의 label interaction을 담을 수 있으며, 레이블 간 dissociativity 같은 특성도 포착할 수 있다. 물론 CRF의 표현력은 그래프 구조와 조건부 분포 클래스 사이의 관계가 잘 알려져 있지만, SPEN은 사용한 딥 네트워크의 일반적 표현력에 의존하므로 이론적 분석은 더 어렵다.
+SPEN은 이런 제약을 우회한다. hidden measurement를 통해 출력 패턴을 비선형으로 점수화 하므로, 라벨간 관계를 명시하지 않아도 더 복잡한 구조(dissociativity 같은 특성)를 담을 수 있다. 물론 CRF의 표현력은 그래프 구조와 조건부 분포 클래스 사이의 관계가 잘 알려지고 실용적 유연성을 얻지만, SPEN은 사용한 딥 네트워크의 일반적 표현력에 의존하므로 이론적 분석은 더 어렵다.  
 
 ---
 
@@ -416,7 +409,7 @@ end for
 
 **Review by 변정우, Aerospace Engineering Undergraduate Researcher**  
 **[Update - Time Log]**  
-* 2026.03.18: [Draft] 1-4 파트 리딩 완료
-* 2026.03.21: [ver_1] 1-2 파트 글 작성
-* 2026..: [ver_2]
+* 2026.03.18: [Draft] 파트 1-4 리딩 완료
+* 2026.03.21: [ver_1] 파트 1-2 글 작성
+* 2026.03.22: [ver_2] 파트 3 글 작성
 * 2026..: [Final_ver]
