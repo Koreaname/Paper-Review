@@ -55,34 +55,14 @@ SPEN의 파라미터화는 Feature network $F(x)$(입력 $x$를 표현 벡터로
 
 ### 3. Example SPEN Architecture
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!! 여기서부터 !!!!!!!!!!
+SPEN의 특성 중 feature network $$F(x) = g(A_2 g(A_1 x))$$는 2-layer MLP로 정의된다. 여기서 $g(\cdot)$는 좌표별 비선형 함수이며, 실험에서는 위치에 따라 sigmoid, ReLU, HardTanh 등을 다르게 사용할 수 있다.  
+에너지 네트워크는 크게 local energy와 global energy의 합으로 구성된다.  
 
-논문이 실험 전반에서 사용한 기본 SPEN 아키텍처는 비교적 단순하지만, 핵심 아이디어를 매우 잘 보여준다.
+Local energy에 대한 각 레이블을 독립적으로 점수화하는 항은 $$E_x^{\text{local}}(\bar y) = \sum_{i=1}^{L} \bar y_i\, b_i^\top F(x)$$으로 표현할 수 있다. 이는 라벨별 독립적인 선형 score를 더한 형태이며, 각 라벨을 개별적으로 평가하는 항임을 의미한다. 이로 인해 SPEN의 성능을 평가할 때에는 global term이 얼마나 구조 정보를 추가하는지로 다뤄야 한다.  
 
-먼저 feature network는 2-layer MLP로 정의된다.
-$$F(x) = g(A_2 g(A_1 x))$$  
-여기서 $g(\cdot)$는 좌표별 비선형 함수이며, 실험에서는 위치에 따라 sigmoid, ReLU, HardTanh 등을 다르게 사용할 수 있다.
+Global energy에서 레이블 간 상호작용을 담당하는 항은 $$E_x^{\text{label}}(\bar y) = c_2^\top g(C_1 \bar y)$$이다. 여기서 $C_1 \bar y$는 출력 레이블들의 학습된 affine measurement으로 몇 개의 측정값을 만드는 원리를 갖는다. 이는 레이블을 단순히 pairwise graph로 연결하는 대신, 레이블 전체를 몇 개의 저차원 측정값으로 압축한 후 비선형 변환을 적용하는 구조다. 이 과정에서 각 hidden unit은 $\bar y$가 여러 좌표를 한꺼번에 보며 특정 패턴을 감지하는 역할을 한다. 해당 원리는 레이블 간 의존성을 사전에 그래프로 고정하지 않아도 되며, 고차 상호작용을 pairwise CRF보다 훨씬 유연하게 다루므로 더 복잡한 조합을 표현할 수 있다. 또한, 선형 스케일링적 측면에서 파라미터 수가 $L$에 대해 선형적으로 증가하기에 $L^2$보다 더 유리하며, 측정 행렬 $C_1$을 해석하면 structure learning 결과를 직접 들여다볼 수 있다는 특징이 있다.  
 
-에너지 네트워크는 크게 local energy와 global energy의 합으로 구성된다.
-
-Local energy. 각 레이블을 독립적으로 점수화하는 항은 다음과 같다.
-
-$$E_x^{\text{local}}(\bar y) = \sum_{i=1}^{L} \bar y_i\, b_i^\top F(x)$$  
-
-이 항만 보면 결국 각 label마다 하나의 선형 분류기를 두는 구조와 유사하다. 즉, 입력 $x$가 어떤 label을 지지하는지를 반영하지만, 레이블 간 상호작용은 아직 없다.
-
-Global energy. 레이블 간 상호작용을 담당하는 항은 다음과 같다.
-
-$$E_x^{\text{label}}(\bar y) = c_2^\top g(C_1 \bar y)$$  
-
-여기서 핵심은 $C_1 \bar y$가 출력 레이블들의 학습된 affine measurement라는 점이다. 이는 레이블을 단순히 pairwise graph로 연결하는 대신, 레이블 전체를 몇 개의 저차원 측정값으로 압축한 후 비선형 변환을 적용하는 구조다. 따라서 다음과 같은 장점이 생긴다.
-
-- 레이블 간 의존성을 사전에 그래프로 고정하지 않아도 된다.
-- 고차 상호작용을 pairwise CRF보다 훨씬 유연하게 담을 수 있다.
-- 파라미터 수가 $L$에 대해 선형적으로 증가한다.
-- 측정 행렬 $C_1$을 해석하면 structure learning 결과를 직접 들여다볼 수 있다.
-
-논문은 데이터 수가 많지 않은 상황에서는 출력 상호작용을 입력에 조건부로 두지 않는 편이 과적합을 줄였다고 보고한다. 그러나 필요하다면 입력과 출력을 함께 쓰는 조건부 global energy도 자연스럽게 설계할 수 있다.
+앞선 수식을 입력과 출력을 함께 쓰는 조건부 global energy로 수식을 변형할 수 있다.  
 
 $$E_x^{\text{cond}}(\bar y) = d_2^\top g(D_1[\bar y; F(x)])$$
 
