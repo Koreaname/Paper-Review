@@ -119,13 +119,15 @@ $$(x, y), \qquad y = \{y_1, \dots, y_L\} \in \{0,1\}^L$$
 
 #### 6.1. Multi-Label Classification
 
-가장 단순한 다중 레이블 분류는 각 label $y_i$를 독립적으로 예측하는 binary relevance 방식이다. 구현은 간단하지만, 레이블 간 상관이나 희귀 label에 대한 보완이 불가능하다는 한계가 있다. 이를 보완하기 위해 ranking loss나 max-margin 학습을 사용하는 방법들이 제안되었고, 또 다른 흐름으로는 저차원 label embedding이나 low-rank parameterization을 이용하는 방식이 발전해 왔다.
+앞서 적용해본 다중 라벨 분류에 대하여 적용 방식은 각 label $y_i$를 독립적으로 예측하는 binary relevance을 이용한다. 이건 구현 자체는 간단하지만, 회귀 라벨이나 강한 라벨 상관관계가 있을 때 약하다. 이를 보완하기 위해 ranking loss나 max-margin 학습을 활용한다. 또 다른 접근으론 label embedding 공간이 저차원 구조를 갖으므로 low-rank factorization으로 예측을 압축한다.  
 
-SPEN의 관점에서 보면, 입력 표현만 저차원으로 압축하고 global energy를 쓰지 않는 선형 혹은 얕은 모델은 계산량 면에서는 매우 효율적이다. 그러나 이런 모델은 mutual exclusivity나 implicature 같은 강한 구조 제약을 표현하기 어렵다. 반면 SPEN은 non-linear feature network와 global energy를 함께 사용하여, 저차원 구조를 가지면서도 레이블 간 제약을 모델링할 수 있다.
+이때 SPEN의 관점에서 보면, 입력 표현만 저차원으로 압축하고 global energy를 쓰지 않는 선형 모델은 계산 측면에서는 매우 효율적이다. 하지만 이런 모델은 mutual exclusivity나 implicature 같은 강한 구조 제약을 표현하기 어렵다. 반면 SPEN은 non-linear feature network(hidden measurement)와 global energy를 함께 사용하기에, 저차원 구조의 장점과 레이블 간 제약 단점을 보완한 구조를 모델링할 수 있다.
 
-또한 기존 structured prediction 기반 multi-label 모델은 CRF류 구조를 사용하면서, 레이블 수가 커질수록 파라미터 수와 추론 비용이 급격히 증가하거나, classifier chains처럼 강한 분해 가정을 둬야 하는 문제가 있었다. 본 논문의 global energy는 compressed sensing 기반 multi-label learning에서 영감을 받았지만, 그보다 더 일반적이다. 즉, 레이블 희소성을 강하게 가정하지 않고도 학습된 measurement + nonlinearity로 구조를 표현한다.
+또한 기존 structured prediction 기반 multi-label 모델은 CRF류 구조를 사용할때 두 가지 문제가 있었다. 레이블 수가 커질수록 파라미터 수($L^2$)와 추론 비용이 급격히 증가하거나, classifier chains처럼 강한 분해 가정을 둬야 하는 문제가 있었다. 반면 global energy는 compressed sensing(error-correcting code) 기반 multi-label learning에서 영감을 받았지만, SPEN은 라벨이 sparse하다고 가정하지 않아도 학습된 measurement를 nonlinearity한 데이터로부터 학습한다.
 
 #### 6.2. Deep Structured Models
+
+!!!!!!!!!!!!! 여기서부터 !!!!!!!!!
 
 딥러닝과 구조화 예측의 결합은 크게 두 방향으로 발전해 왔다.
 
