@@ -95,25 +95,23 @@ $$y_p = \arg\min_{y}\left(- \Delta(y_i, y) + E_{x_i}(y)\right)$$
 
 결국 학습 방법인 SSVM의 목적은 정답 에너지와 예측 에너지의 간격을 키우는 것이다. 따라서 식 중간인 loss-augmented inference의 결과를 0-1로 rounding하지 않고, 연속 완화 해 $\bar y$ 자체를 사용한다. SSVM 자체의 목적은 에너지 차이를 통한 마진이지, 결과 자체를 이산적으로 재해석 하는 것이 아니기 때문이다. 한편, 예측이 비볼록 최적화의 근사해라는 점은 약점이지만 학습 안정화를 위해 다음과 같은 실전 전략을 활용할 수 있다.  
 
-- 먼저 local label-wise loss만으로 feature network를 pretraining한다.
-- 데이터가 적을 때는 global energy를 학습하는 동안 feature network를 고정해 과적합을 줄인다.
-- 마지막 단계에서 전체 네트워크를 작은 learning rate로 함께 미세조정한다.
+- local label-wise loss만으로 많은 feature network를 pretraining한다.  
+- global energy를 학습하는 동안 데이터가 적을 때는 feature network를 고정해 과적합을 줄인다.  
+- 마지막 단계엔 전체 네트워크를 작은 learning rate로 미세조정한다.  
 
-이 부분은 SPEN이 단순히 "출력에 대해 gradient descent를 돌린다"는 수준이 아니라, structured margin 학습과 iterative inference를 일관되게 묶어낸 모델임을 보여준다.
+이 부분은 SPEN이 단순히 출력에 대해 gradient descent를 돌린다는게 아니라, structured margin 학습과 iterative inference를 일관되게 묶어낸 모델임을 의미한다. 이때 이 학습법은 여전히 근사적(non-convex energy를 gradient descent로 풀기에 inner inference가 margin violation을 놓치는 문제 발생)으로 접근하지만, 오히려 energy-based margin learning이 접근할 수 없는 저에너지 영역에는 더 민감할 수 있다고 한다. 따라서 실제로 inference 절차가 도달하는 영역을 중심으로 지형을 다듬고자 한다.
 
 ---
 
 ### 5. Applications of SPENs
 
-논문이 가장 강하게 겨냥하는 응용은 multi-label classification이다. 데이터는 다음 형태를 가진다.
+SPEN이 가장 많이 활용되는 분야는 다중 라벨 분류이다.  
 
-$$(x, y), \qquad
-y = \{y_1, \dots, y_L\} \in \{0,1\}^L$$  
+$$(x, y), \qquad y = \{y_1, \dots, y_L\} \in \{0,1\}^L$$  
 
+여기서 출력 $y$는 여러 개의 이진 라벨 집합으로, 서로 독립적이지 않고 상관관계가 복잡하다. 이 복잡한 관계를 파악하기 어렵기에, SPEN은 측정 행렬 $C_1$을 학습함으로써 레이블 간 구조를 데이터에서 자동으로 발견할 수 있다.
 
-여기서 각 label은 독립이 아니라 서로 상관되거나 배타적일 수 있다. 문제는 이런 상호작용 구조가 주어지지 않는 경우가 많다는 점이다. SPEN은 바로 이 부분에서 장점을 가진다. (5)의 측정 행렬 $C_1$을 학습함으로써, 레이블 간 구조를 데이터에서 자동으로 발견할 수 있기 때문이다.
-
-더 넓게 보면 SPEN은 MAP inference 문제로 쓸 수 있는 거의 모든 structured prediction 문제에 적용 가능하다. 예를 들어 시퀀스 라벨링처럼 temporal structure가 있는 경우에는 $C_1$을 반복 블록 대각 구조나 temporal convolution으로 설계해, 도메인 지식을 부드럽게 반영할 수 있다. 즉, SPEN은 완전히 무구조한 접근이 아니라, 필요하면 도메인 구조를 신경망 파라미터화 안에 녹여 넣는 유연한 틀이라고 보는 편이 맞다.
+단순히 다중 라벨 분류뿐만 아닌, SPEN은 MAP inference 문제로 쓸 수 있는 거의 모든 structured prediction 문제에 적용 가능하다. 예를 들어 시퀀스 문제처럼 temporal structure가 있는 경우엔 $C_1$을 block diagonal 반복 구조나 temporal convolution으로 설계하여 도메인 지식을 부드럽게 반영할 수 있다. 즉, SPEN은 그래프 없이 구조를 배운다기 보단, 도메인 구조를 신경망 파라미터화 안에 녹여 넣는 유연한 framework라고 보는 편이 맞다.  
 
 ---
 
