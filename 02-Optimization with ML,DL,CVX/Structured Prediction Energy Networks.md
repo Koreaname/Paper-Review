@@ -127,8 +127,6 @@ $$(x, y), \qquad y = \{y_1, \dots, y_L\} \in \{0,1\}^L$$
 
 #### 6.2. Deep Structured Models
 
-!!!!!!!!!!!!! 여기서부터 !!!!!!!!!
-
 딥러닝과 구조화 예측의 결합은 크게 두 방향으로 발전해 왔다.
 
 - CRF의 unary/pairwise potential을 deep feature로 파라미터화하는 방식
@@ -395,6 +393,9 @@ end for
 **Review by 변정우, Aerospace Engineering Undergraduate Researcher**  
 **[Update - Time Log]**  
 * 2026.03.18: [Draft] 파트 1-4 리딩 완료
-* 2026.03.21: [ver_1] 파트 1-2 글 작성
-* 2026.03.22: [ver_2] 파트 3 글 작성
+* 2026.03.21: [ver_1] 파트 1-2 글 작성, 5-8 리딩 완료
+* 2026.03.22: [ver_2] 파트 3 글 작성, Appendix 리딩 완료
+* 2026.03.24: [ver_3] 파트 4-5 글 작성
+* 2026.03.25: [ver_4] 파트  글 작성
+
 * 2026..: [Final_ver]
