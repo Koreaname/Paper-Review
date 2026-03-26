@@ -140,117 +140,26 @@ $$(x, y), \qquad y = \{y_1, \dots, y_L\} \in \{0,1\}^L$$
 ### 7. Experiments
 
 #### 7.1. Multi-Label Classification Benchmarks
-
-이 절에서는 SPEN을 표준 다중 레이블 벤치마크에 적용해 BR, LR, MLP, DMF와 비교한다.
-
-- BR: label별 독립 logistic regression
-- LR: low-rank weights 기반 방법
-- MLP: feature network + local energy만 있는 feed-forward baseline
-- DMF: fully connected pairwise CRF에서 mean-field inference를 5단계 unroll한 deep mean field baseline
-- SPEN: local + global energy를 함께 쓰는 제안 모델
-
-논문은 example-averaged F1을 사용해 성능을 비교한다.
-
-| Dataset | BR | LR | MLP | DMF | SPEN |
-|---|---:|---:|---:|---:|---:|
-| Bibtex | 37.2 | 39.0 | 38.9 | 40.0 | 42.2 |
-| Bookmarks | 30.7 | 31.0 | 33.8 | 33.1 | 34.4 |
-| Delicious | 26.5 | 35.3 | 37.8 | 34.2 | 37.5 |
-
-표의 결과는 몇 가지 중요한 사실을 보여준다.
-
-첫째, SPEN은 세 데이터셋 중 두 개에서 최고 성능을 기록하며, structured baseline인 DMF보다도 강하다. 특히 pairwise potential 수가 많은 DMF는 완전연결 CRF를 쓰기 때문에 통계적으로 과적합되기 쉬웠고, Bookmarks와 Delicious에서는 이 문제가 크게 드러난다.
-
-둘째, 단순해 보이는 MLP baseline이 생각보다 매우 강하다. 논문은 이것을 중요한 관찰로 본다. 즉, 출력 구조를 항상 iterative inference로 풀어야만 하는 것은 아니며, 충분히 큰 feed-forward 모델도 상당한 구조를 흡수할 수 있다.
-
-셋째, Delicious에서는 MLP가 SPEN보다 근소하게 좋다. 저자들의 해석은 명확하다. Delicious에서는 thresholding에 앞서 잘 calibration된 soft prediction이 중요한데, logistic loss로 훈련된 MLP가 margin-based SPEN보다 이 부분에서 유리했다. 그래서 SPEN은 test time에 entropy smoothing을 추가해 soft prediction을 더 부드럽게 만들어야 했다.
-
-또한 논문은 missing label setting을 다루는 다른 multi-label 연구들과 SPEN이 경쟁 관계가 아니라 상보적이라고 본다. 즉, SPEN의 구조 학습 틀 위에 missing data 처리 기법을 결합할 여지가 있다.
+SPEN을 BR, LR, MLP, DMF와 비교한 결과, Bibtex와 Bookmarks에서는 SPEN이 가장 좋고 Delicious에서는 MLP가 근소하게 앞선다. 이 결과는 SPEN이 structured baseline으로 충분히 경쟁력 있음을 보이지만, 동시에 단순한 MLP도 매우 강한 baseline임을 드러낸다. 특히 DMF는 완전연결 pairwise 구조 때문에 과적합에 취약했고, Delicious에서는 soft prediction calibration 측면에서 MLP가 더 유리했다. 즉, 이 실험의 핵심은 SPEN의 효과를 보이면서도 feed-forward 모델과의 차이를 과장하지 않았다는 점이다.  
 
 #### 7.2. Comparison to Alternative SSVM Approaches
-
-SPEN의 학습은 SSVM 기반이므로, train/test inference가 정확하지 않을 때 어떤 일이 벌어지는지도 중요하다. 이를 보기 위해 논문은 label 수가 14개인 Yeast 데이터셋에서 다음 예측 방식을 비교한다.
-
-| Method | EXACT | LP | LBP | DMF | SPEN |
-|---|---:|---:|---:|---:|---:|
-| Hamming error | 20.2 ± .5 | 20.5 ± .5 | 24.3 ± .6 | 23 ± .2 | 20.0 ± .3 |
-
-이 결과는 두 가지 관점에서 의미가 있다.
-
-첫째, DMF가 loopy graphical model을 위한 baseline으로 완전히 부적절한 것은 아니며, LBP보다 나은 성능을 낸다. 따라서 7.1절에서 DMF를 structured deep baseline으로 둔 선택은 어느 정도 정당화된다.
-
-둘째, 더 중요한 점은 SPEN이 EXACT나 LP와 비슷한 수준까지 도달한다는 사실이다. 이는 비볼록 최적화 기반의 근사 추론이 항상 SSVM 학습을 망치지는 않음을 시사한다. 저자들은 이를 두고, 적어도 본 실험에서는 SPEN의 inexact inference가 LBP처럼 심각한 under-generation 문제를 일으키지 않았다고 해석한다.
-
-물론 pairwise CRF와 SPEN은 표현력이 다르므로, 이 결과만으로 학습 알고리즘의 효과를 완전히 분리해서 말할 수는 없다. 그럼에도 불구하고, "inference가 근사적이기 때문에 SSVM 학습이 반드시 취약하다"는 우려를 SPEN이 상당 부분 누그러뜨린다는 메시지는 분명하다.
+Yeast 데이터셋에서 EXACT, LP, LBP, DMF, SPEN을 비교한 결과, SPEN의 Hamming error는 EXACT와 LP에 거의 근접했고 LBP보다도 좋았다. 이는 SPEN의 근사 추론이 SSVM 학습을 항상 치명적으로 망치지는 않음을 보여준다. 또한 DMF도 완전히 부적절한 baseline은 아니며, structured predictor로 비교할 최소한의 타당성은 확보했다. 다만 pairwise CRF와 SPEN의 표현력이 다르기에 이 결과만으로 학습 알고리즘 자체의 우열을 완전히 분리해 해석하긴 어렵다.
 
 #### 7.3. Structure Learning Using SPENs
-
-이 절은 SPEN의 가장 매력적인 성질 중 하나인 구조 해석 가능성을 보여준다. 저자들은 레이블이 4개씩 묶인 블록 내부에서 서로 배타적인 synthetic task를 만든다.
-
-데이터 생성 절차는 다음과 같다.
-
-1. $64$차원 feature를 갖는 설계 행렬 $X$를 표준정규분포에서 샘플링한다.
-2. $64 \times 16$ 가중치 행렬 $A$를 다시 샘플링한다.
-3. $Z = XA$를 만든 뒤, 16개 label을 4개씩 연속 블록으로 나눈다.
-4. 각 블록에서 가장 큰 값의 위치만 1로 두고 나머지는 0으로 둔다.
-
-즉, 각 블록마다 정확히 하나의 label만 활성화되므로, 데이터에는 강한 within-block mutual exclusivity가 숨어 있다.
-
-이때 global energy의 측정 행렬 $C_1$을 들여다보면, SPEN이 어떤 레이블들을 함께 보고 있는지 직접 관찰할 수 있다. 논문은 특히 비선형 함수 선택에 따라 해석 가능성이 달라짐을 보여준다.
-
-- ReLU 사용 시: 여러 hidden unit이 일부 label에 큰 가중치를 나누어 가지며, 제약 위반 탐지가 hidden unit들의 선형 결합에 분산된다. 구조는 학습되지만 해석은 덜 직관적이다.
-- HardTanh 사용 시: 각 measurement가 포화 특성을 가지므로, 블록 구조를 보다 개별적이고 선명하게 포착한다. 결과적으로 측정 행렬의 패턴이 훨씬 해석 가능해진다.
-
-성능 비교는 다음과 같다.
-
-| # train examples | Linear | 3-Layer MLP | SPEN |
-|---|---:|---:|---:|
-| 1.5k | 80.0 | 81.6 | 91.5 |
-| 15k | 81.8 | 96.3 | 96.7 |
-
-여기서 핵심 메시지는 분명하다.
-
-- 적은 데이터에서는 SPEN이 압도적이다.  
-  전역 구조를 반영하는 global energy가 훨씬 더 압축적(parsimonious)으로 설계되어 있기 때문이다.
-- 데이터가 충분히 많아지면 MLP도 따라온다.  
-  처음에는 mutual exclusivity 같은 강한 제약은 iterative inference가 필요할 것처럼 보였지만, 충분히 큰 feed-forward network도 이를 근사적으로 학습할 수 있었다.
-
-즉, 이 절은 SPEN의 장점을 "무조건 더 표현력이 세다"가 아니라, 구조를 더 적은 파라미터로 더 빨리 학습할 수 있다는 방향으로 보여준다.
+이 절에서는 블록 내부 mutual exclusivity를 갖는 synthetic data를 만들어, SPEN이 measurement matrix $C_1$을 통해 레이블 구조를 학습하는지 확인한다. ReLU보다 HardTanh가 더 해석 가능한 측정 행렬을 만들며, 어떤 label들이 함께 제약되는지 패턴으로 더 명확히 드러난다. 성능 면에서는 적은 데이터에서는 SPEN이 MLP보다 크게 우세하고, 데이터가 충분히 많아지면 MLP도 거의 비슷한 수준까지 따라온다. 즉, SPEN의 장점은 무조건 더 강한 표현력이라기보다 구조를 더 압축적으로 학습할 수 있다는 데 있다.  
 
 #### 7.4. Convergence Behavior of SPEN Prediction
-
-SPEN의 test-time prediction은 gradient-based iterative optimization이므로, 실제로 얼마나 빨리 수렴하는지와 batch 처리에서 어떤 병목이 생기는지가 중요하다. 저자들은 GPU에서 큰 minibatch로 예측을 수행할 때 curse of the last reducer 문제가 발생한다고 지적한다. 즉, 대부분의 샘플이 이미 수렴했더라도, 가장 늦게 수렴하는 몇 개 때문에 전체 batch가 계속 계산을 수행하게 된다.
-
-Bibtex 데이터셋에서의 관찰은 다음과 같다.
-
-- 대부분의 예시는 약 20 step 부근에서 수렴한다.
-- 가장 늦은 예시는 41 step 정도까지 필요하다.
-- 최적화 대상은 $[0,1]^L$ 위의 비볼록 에너지이지만, 실제 예측은 종종 0 또는 1 부근으로 뾰족하게 모인다.
-
-저자들은 속도 향상을 위해 두 가지 조기 종료 전략을 실험한다.
-
-1. batch의 일정 비율이 수렴하면 종료
-2. 수렴 tolerance를 느슨하게 설정
-
-두 경우 모두, 정확도 저하를 거의 일으키지 않으면서 약 3배 수준의 속도 향상을 얻는다. 특히 느리게 수렴하는 샘플은 원래도 잘못 예측될 가능성이 높다는 가설이 제시된다. 또한 MLP의 출력을 초기값으로 사용하면 수렴 곡선이 대략 5 iteration 정도 왼쪽으로 이동해 더 빨라진다.
-
-논문은 MLP와 SPEN의 실제 속도 차이도 보여준다. Bibtex test set 전체 2515개 예측에 대해 MLP는 사실상 즉시 끝나는 반면, SPEN은 iterative optimization 때문에 훨씬 느리다. 그럼에도 feature network는 한 번만 계산하면 되고, 추가 비용은 주로 출력 최적화에 집중되므로, 표현력과 속도의 절충이 비교적 명확한 모델이라고 볼 수 있다.
-
-마지막으로 저자들은 search error도 측정한다. 즉, 최적화가 반환한 해의 에너지가 ground truth에서의 에너지보다 더 큰 경우를 세어 보면, Bibtex에서 약 8% 정도 이런 실패가 발생한다. 이는 SPEN의 가장 본질적인 한계, 즉 강한 모델링 유연성을 지역 최적화 기반 추론과 맞바꾸었다는 사실을 상기시킨다.
+SPEN 예측은 iterative optimization이므로 MLP보다 느리며 batch에서는 가장 늦게 수렴하는 샘플이 전체 시간을 끄는 문제가 발생한다. Bibtex에서는 대부분의 예제가 약 20 step 안팎에서 수렴했지만, 일부 예제는 41 step까지 필요했다. 하지만 일정 비율의 샘플만 수렴해도 종료하거나 tolerance를 느슨하게 두면 정확도 손실을 거의 늘리지 않고 약 3배 정도 속도를 높일 수 있었다. 결국 SPEN은 느리지만 실용적인 속도-정확도 절충이 가능하며, 동시에 local optimization에 따른 search error 한계는 남는다.
 
 ---
 
 ### 8. Conclusion and Future Work
 
-이 논문은 structured prediction에서 딥러닝을 입력 표현 학습에만 쓰지 않고, 출력 구조 자체를 에너지 함수로 표현하는 방향을 제시했다는 점에서 의미가 크다. SPEN은 예측을 gradient-based optimization으로 수행하기 때문에, 기존 그래프 구조에 맞춰 inference algorithm을 새로 설계하지 않고도 고차 상호작용을 포함하는 유연한 에너지 함수를 사용할 수 있다.
+결과적으로 이 논문은 structured prediction에서 딥러닝을 입력 표현 학습에만 쓰지 않고, 출력 구조 자체를 에너지 함수로 표현하는 방향을 제시했다는 점에서 유의미하다. SPEN은 예측을 gradient-based optimization으로 수행하기 때문에, 기존 그래프 구조에 맞춰 inference algorithm을 새로 설계하지 않고도 고차 상호작용을 포함하는 유연한 에너지 함수를 사용할 수 있다.  
 
-특히 논문이 보여준 핵심 메시지는 다음과 같이 정리할 수 있다.
+이에 관하여 여러 장점을 논의할 수 있다. 적은 데이터에서는 잘 설계된 energy-based 모델이 더 압축적(더 간결하며, 도메인 지식 주입 측면)이어서 유리하다. 또한, multi-label classification처럼 label topology가 주어지지 않는 문제에서 SPEN은 구조 학습 도구로 자연스럽다. 이 과정에서 iterative prediction은 느리지만 feed-forward 모델보다 더 직접적으로 구조를 주입하고 해석할 수 있다.  
 
-- 적은 데이터에서는 잘 설계된 energy-based 모델이 더 압축적이어서 유리할 수 있다.
-- multi-label classification처럼 label topology가 주어지지 않는 문제에서 SPEN은 구조 학습 도구로 자연스럽다.
-- iterative prediction은 느리지만, 그 대가로 feed-forward 모델보다 더 직접적으로 구조를 주입하고 해석할 수 있다.
-
-저자들이 제안한 후속 연구 방향도 설득력 있다. 하나는 $y$에 대해 convex한 SPEN을 설계해 추론 안정성을 높이는 것이고, 다른 하나는 gradient-based prediction 과정 자체를 학습에 포함하여 prediction procedure까지 end-to-end로 최적화하는 것이다. 즉, 본 논문은 완성형 해답이라기보다, 딥 structured prediction을 훨씬 넓은 함수 공간으로 확장하는 출발점에 가깝다.
+후속 연구에 대한 논의는 다음과 같다. 하나는 $y$에 대해 convex한 SPEN을 설계해 추론 안정성을 높여서 꼭 convex일 필요는 없는 SPEN을 탐구(inference 안정성 향상)하는 것이다. 다른 하나는 SSVM 기반 근사 학습이 아닌, gradient-based prediction 자체를 미분하고 학습에 포함하여 prediction procedure까지 end-to-end로 최적화하는 것이다. 즉, SPEN뿐만 아닌 향후 deep structured prediction을 훨씬 넓은 함수 공간으로 확장하기 위한 시도로 생각할 수 있다.
 
 ---
 
