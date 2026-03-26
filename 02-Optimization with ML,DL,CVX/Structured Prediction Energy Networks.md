@@ -127,27 +127,13 @@ $$(x, y), \qquad y = \{y_1, \dots, y_L\} \in \{0,1\}^L$$
 
 #### 6.2. Deep Structured Models
 
-딥러닝과 구조화 예측의 결합은 크게 두 방향으로 발전해 왔다.
+지금까지 딥러닝을 활용한 구조화 예측의 결합은 CRF의 unary/pairwise potential을 deep feature로 파라미터화하는 방식과 approximate inference 알고리즘을 여러 단계 unroll하여 전체를 computation graph로 보고 end-to-end로 학습하는 방식으로 나눠 활용되었다.
 
-- CRF의 unary/pairwise potential을 deep feature로 파라미터화하는 방식
-- approximate inference 알고리즘을 여러 단계 unroll한 뒤, 전체를 computation graph로 보고 end-to-end로 학습하는 방식
-
-이 두 흐름은 모두 강력하다. 특히 입력 $x$에 대한 표현 학습 능력은 탁월하다. 하지만 출력 $y$에 대한 구조는 여전히 underlying graphical model에 의해 제한된다. 즉, deep network가 더해져도 출력 구조의 형태 자체는 미리 정한 모델의 범위를 벗어나기 어렵다.
-
-SPEN은 여기서 한 걸음 더 나간다. 출력을 그래프 위 변수로 고정하지 않고, 에너지 함수 전체를 딥 네트워크로 두기 때문이다. 덕분에 모델링은 훨씬 유연해지지만, 반대로 inference는 더 이상 그래프별 최적화 알고리즘의 보장을 받지 못한다.
+이 두 방법은 입력 $x$에 대한 표현 학습 능력은 탁월하지만 출력 $y$에 대한 구조는 여전히 underlying graphical model에 의해 제한된다. 이에 따라 각 모델별 별도의 추론 알고리즘을 설계해야 한다. SPEN은 이러한 제약으로부터 자유로우며, 구조화된 모델을 신경망에 얹는 것이 아니라 에너지 함수 자체를 신경망으로 가게 한다. 덕분에 모델링은 훨씬 유연해지지만, inference는 더 이상 그래프별 최적화 알고리즘의 보장을 받지 못한다.
 
 #### 6.3. Iterative Prediction using Neural Networks
 
-일반적인 딥러닝에서는 backpropagation이 네트워크 파라미터를 업데이트하는 데 쓰인다. 그러나 SPEN에서는 역전파가 출력 변수 $\bar y$를 직접 최적화하는 예측 알고리즘으로 쓰인다. 저자들은 이것이 완전히 새로운 발상은 아니지만, 구조화 객체 예측에 본격적으로 적용된 예는 많지 않았다고 본다.
-
-관련 예로는 다음과 같은 작업들이 거론된다.
-
-- adversarial example 생성
-- 문서/샘플 embedding 최적화
-- 이미지 합성 및 texture synthesis
-- iterative error feedback 기반 pose estimation
-
-즉, SPEN은 "예측 = forward pass 한 번"이라는 관습 대신, 예측 자체를 differentiable optimization loop로 취급하는 broader 흐름 안에 위치한다.
+일반적인 딥러닝에서는 backpropagation이 네트워크 파라미터를 업데이트하는 데 쓰인다. 하지만 SPEN에서는 역전파가 출력 변수 $\bar y$를 직접 최적화하는 예측 알고리즘으로 쓰인다. 이 관점 자체는 완전히 새로운 것은 아니다. adversarial example 생성, 문서 임베딩, 이미지 합성 등에서 입력이나 latent code를 gradient로 조정하는 방식은 이미 있지만, SPEN은 이것을 structured output prediction에 본격적으로 연결했다는 점이 다르다. 즉, gradient-based 예측을 구조적 예측의 일반 프레임워크로 밀어 올린 것입니다.  
 
 ---
 
@@ -396,6 +382,6 @@ end for
 * 2026.03.21: [ver_1] 파트 1-2 글 작성, 5-8 리딩 완료
 * 2026.03.22: [ver_2] 파트 3 글 작성, Appendix 리딩 완료
 * 2026.03.24: [ver_3] 파트 4-5 글 작성
-* 2026.03.25: [ver_4] 파트  글 작성
+* 2026.03.26: [ver_4] 파트  글 작성
 
 * 2026..: [Final_ver]
