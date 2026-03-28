@@ -1,6 +1,13 @@
 ## Tight Constraint Prediction of Six-Degree-of-Freedom Transformer-based Powered Descent Guidance
 
-### I. Nomenclature
+### 0. 논문 정보 (Reference)
+* Title: Tight Constraint Prediction of Six-Degree-of-Freedom Transformer-based Powered Descent Guidance  
+* Authors: Julia Briden, Trey Gurga, Breanna Johnson, Abhishek Cauligi, Richard Linares  
+* arXiv: 2501.00930  
+* Category: Optimization / Optimal Control / Guidance & Control / Learning-based Optimization  
+* Affiliation: NASA Johnson Space Center, MIT, NASA Jet Propulsion Laboratory  
+
+### 1. Nomenclature
 
 ### Variables
 
@@ -47,9 +54,9 @@ $$
 
 이 표기 체계의 핵심은 간단하다. **SCvx는 이 비볼록 문제를 반복적으로 선형화하고, T-SCvx는 그 과정에서 어떤 inequality가 실제로 경계에 걸리는지 예측해 계산량을 줄인다.**
 
-* * *
+---
 
-### II. Introduction
+### 2. Introduction
 
 행성 착륙 문제에서 powered descent guidance(PDG)는 단순히 “착륙 가능한 궤적”을 찾는 수준을 넘어서, **연료를 최소화하면서도 동역학적으로 실현 가능하고 안전 제약을 만족하는 궤적**을 실시간에 가깝게 생성해야 한다. 특히 인간 탑승 가능급의 고질량 임무로 갈수록 연료 여유와 안전 마진이 임무 성패를 가르기 때문에, onboard에서 long-horizon trajectory generation을 수행할 수 있는 계산 효율이 중요해진다.
 
@@ -73,9 +80,9 @@ $$
 
 논문의 흐름은 자연스럽다. 먼저 일반 비볼록 최적화와 6-DoF PDG 수식을 정리하고, SCvx가 어떤 식으로 문제를 반복적으로 convexify하는지 설명한다. 그 다음 tight constraint prediction이 왜 수학적으로 타당한지 KKT 관점에서 정리한 뒤, 이를 transformer와 결합한 T-SCvx 알고리즘을 제시한다. 마지막으로 Mars landing 셋업에서 학습/추론/성능을 검증하고, lookup table 및 KD-tree 방식과 비교해 장단점을 분석한다.
 
-* * *
+---
 
-### III. Methods
+### 3. Methods
 
 #### A. Non-Convex Optimization
 
@@ -202,7 +209,7 @@ $$
 
 이 문제를 한 문장으로 요약하면, **자세와 병진이 강하게 결합된 자유 종단시간 최소연료 착륙 문제를, 다양한 상태/제어 제약 아래에서 푸는 것**이다. 난이도가 높은 이유는 명확하다. 추력 하한, quaternion 기반 자세, 짐벌, 공력, 종단시간이 동시에 들어가면서 문제가 강하게 비볼록해진다.
 
-### 1. Successive Convexification
+### Successive Convexification
 
 SCvx는 위의 비볼록 optimal control problem을 한 번에 풀지 않고, 현재 iterate 주변에서 선형화한 **일련의 convex subproblem**으로 바꾸어 푼다. $k$번째 반복에서 state/control increment를
 
@@ -324,7 +331,7 @@ $$
 
 을 계산해 trust region contraction/growth에도 반영한다. 즉, active set이 많이 바뀔수록 다음 step을 더 보수적으로 받아들인다. 이는 T-SCvx가 단순 warm-start보다 한 단계 더 나아가, **SCvx의 trust region 설계 자체를 구조 정보로 보정**한다는 뜻이다.
 
-### 1. Transformer Neural Network Architecture
+### Transformer Neural Network Architecture
 
 T-SCvx는 두 개의 transformer neural network를 사용한다.
 
@@ -359,7 +366,7 @@ $$
 
 실험 데이터 생성을 위해 저자들은 SCP Toolbox의 SCvx 구현과 ECOS solver를 사용했고, 6-DoF PDG 자체는 Julia로 커스텀 구현했다. 또한 변수 스케일링을 통해 수치 조건을 개선했고, 무작정 uniform sampling을 하는 대신 feasible region을 더 효율적으로 덮는 sampling strategy를 설계했다.
 
-### 1. Symbolic Implementation of the 6-DoF Problem
+### Symbolic Implementation of the 6-DoF Problem
 
 SCvx를 적용하려면 매 iteration, 매 time step에서 동역학과 제약을 선형화해야 한다. 이를 위해 상태와 제어를 다음처럼 둔다.
 
@@ -384,7 +391,7 @@ $$
 
 문제는 6-DoF에서 quaternion, skew-symmetric matrix, torque term이 함께 들어가므로 이 미분이 꽤 복잡하다는 점이다. finite difference로도 할 수는 있지만 수치 오차가 누적되기 쉽다. 그래서 논문은 Julia의 `Symbolics` 패키지를 사용해 partial derivative를 **기호적으로 정확하게** 계산한다. 이 선택은 단순 구현 취향의 문제가 아니라, SCvx처럼 반복적 선형화가 알고리즘 성능을 좌우하는 경우에 매우 실용적이다.
 
-### 2. Data Sampling Strategy
+### Data Sampling Strategy
 
 6-DoF 문제는 비볼록성이 강해서, 3-DoF T-PDG에서 사용하던 순진한 uniform sampling을 그대로 쓰면 데이터셋 생성 비용이 지나치게 커진다. 그래서 논문은 시스템의 회전 대칭성을 이용한다.
 
@@ -398,7 +405,7 @@ $$
 
 이 전략의 의미는 크다. 실제로 최적화를 돌려 얻은 원본 샘플은 1,600개 미만이지만, 회전 augmentation 후에는 11,600개가 넘는 데이터셋을 얻는다. 다시 말해, 논문은 더 좋은 신경망 구조 이전에 **문제의 물리적 symmetry를 데이터 효율로 바꾸는 방법**을 제시한다.
 
-### 3. Training, Validation, and Testing
+### Training, Validation, and Testing
 
 학습 절차는 다음과 같다.
 
@@ -410,9 +417,9 @@ $$
 
 흥미로운 점은, 데이터셋 규모가 아주 크지 않음에도 두 네트워크가 빠르게 수렴했다는 것이다. 이는 두 가지를 시사한다. 첫째, 회전 augmentation이 실제로 정보량을 크게 늘려 주었다. 둘째, 6-DoF PDG의 active-set과 trajectory structure가 완전히 무질서한 것이 아니라, **초기 상태와 제약 파라미터의 함수로서 학습 가능한 패턴**을 가진다는 뜻이다.
 
-* * *
+---
 
-### IV. Transformer-based Successive Convexification
+### 4. Transformer-based Successive Convexification
 
 #### A. Problem Setup and Parameters
 
@@ -521,9 +528,9 @@ solution prediction 결과도 비슷한 패턴이다.
 
 논문은 이 결과를 RAD750 flight computer의 제약과도 비교한다. 기준은 대략 **1초 이내 runtime**과 **60 MB SRAM**이다. 이 관점에서 보면 T-SCvx와 KDTree는 둘 다 onboard 적용 가능성 범위 안에 들어오지만, linear interpolation은 메모리/시간 면에서 사실상 어렵다. 따라서 현실적인 선택지는 “OOD robustness가 중요한가, 아니면 training support 안에서의 극단적 inference speed가 중요한가”의 문제로 좁혀진다. 논문의 결론은 6-DoF PDG처럼 dispersions가 큰 문제에서는 **T-SCvx의 일반화 이점이 더 실용적**이라는 쪽에 가깝다.
 
-* * *
+---
 
-### V. Future Work
+### 5. Future Work
 
 논문이 제시하는 미래 연구 방향은 단순히 “더 큰 모델을 쓰자”가 아니다. 오히려 T-SCvx가 제공하는 **구조 정보(active-set information)**를 최적화 알고리즘 안으로 더 깊게 집어넣는 방향이다.
 
@@ -535,9 +542,9 @@ solution prediction 결과도 비슷한 패턴이다.
 
 마지막으로, 가장 실용적인 다음 단계는 flight-grade radiation-hardened hardware에서의 검증이다. 지상용 개발환경에서의 5초와 실제 우주비행 컴퓨터에서의 5초는 전혀 다른 의미를 가진다. 따라서 custom solver 구현, 병렬화 가능한 부분의 분리, 신경망 추론 스택의 경량화까지 포함한 end-to-end 검증이 필요하다.
 
-* * *
+---
 
-### VI. Conclusion
+### 6. Conclusion
 
 이 논문은 6-DoF powered descent guidance를 위한 **Transformer-based Successive Convexification(T-SCvx)**를 제안하고, Mars landing 문제에서 그 효과를 실험적으로 입증한다. 핵심은 두 가지다.
 
@@ -555,7 +562,7 @@ solution prediction 결과도 비슷한 패턴이다.
 
 결국 이 논문의 가장 중요한 메시지는 명확하다. **6-DoF trajectory optimization을 빠르게 만드는 가장 좋은 방법 중 하나는, 최적화 문제의 구조 자체를 학습하는 것**이다. T-SCvx는 그 구조를 active set과 initial trajectory의 형태로 추출해, 비볼록 최적화를 실시간 onboard guidance에 더 가깝게 가져온다.
 
-* * *
+---
 
 ### Acknowledgments
 
