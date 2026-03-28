@@ -1,4 +1,4 @@
-## Tight Constraint Prediction of Six-Degree-of-Freedom Transformer-based Powered Descent Guidance
+## 6DOF Transformer 기반 Powered Descent Guidance에서의 활성 제약 예측
 
 ### 0. 논문 정보 (Reference)
 * Title: Tight Constraint Prediction of Six-Degree-of-Freedom Transformer-based Powered Descent Guidance  
