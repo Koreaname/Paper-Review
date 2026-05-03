@@ -1,13 +1,13 @@
-## SAFE: Finding Sparse and Flat Minima to Improve Pruning
-### 0. 논문 정보 (Reference)
-
-#### Title: SAFE: Finding Sparse and Flat Minima to Improve Pruning
-#### Authors: Dongyeop Lee, Kwanhee Lee, Jinseok Chung, Namhoon Lee
-#### Venue: ICML 2025 Spotlight Poster
-#### Proceedings: Proceedings of the 42nd International Conference on Machine Learning, PMLR Vol. 267, 2025
-#### arXiv: 2506.06866
-#### OpenReview: https://openreview.net/forum?id=10l1pGeOcK
-#### Open Source: https://github.com/LOG-postech/safe-jax / https://github.com/LOG-postech/safe-torch
+## SAFE: Sparse 및 Flat Minima 탐색을 통한 가지치기 성능 향상  
+  
+### 0. 논문 정보 (Reference)  
+* **Title:** SAFE: Finding Sparse and Flat Minima to Improve Pruning  
+* **Authors:** Dongyeop Lee, Kwanhee Lee, Jinseok Chung, Namhoon Lee  
+* **Conference:** ICML 2025 (Spotlight Poster)  
+* **Proceedings:** Proceedings of the 42nd International Conference on Machine Learning, PMLR Vol. 267, 2025  
+* **arXiv:** 2506.06866  
+* **OpenReview:** https://openreview.net/forum?id=10l1pGeOcK  
+* **Open Source:** https://github.com/LOG-postech/safe-jax / https://github.com/LOG-postech/safe-torch
 
 ---
 
@@ -356,12 +356,6 @@ LLM 실험은 SAFE의 일반성을 보여주는 파트이다. 논문은 LLaMA-2 
 
 ---
 
-### References
-
-참고문헌은 크게 네 갈래의 흐름으로 구성된다. 첫째, LeCun, Hassibi, Tibshirani, Beck 등으로 이어지는 **고전적인 sparsity 및 pruning 최적화 연구** 가 있다. 둘째, Keskar, Jiang, Foret, Izmailov 등으로 이어지는 **flat minima와 sharpness-aware optimization 연구** 가 있다. 셋째, Han, Frankle, Frantar, Sun, Meng 등의 **현대적 neural network pruning 및 LLM pruning 연구** 가 있다. 넷째, noisy label, adversarial robustness, SAM theory와 관련된 최근 연구들이 포함되어, SAFE가 희소성·평탄성·강건성의 세 축 위에서 제안되었음을 뒷받침한다.
-
----
-
 ### A. Convergence analysis of SAFE
 
 부록 A는 본문의 이론적 주장을 엄밀하게 정리하는 역할을 한다. 핵심 목표는 SAFE의 $x$-update가 augmented Lagrangian의 stationary point로 수렴하고, 이를 바탕으로 전체 알고리즘이 sparsity-constrained optimization의 $\delta$-stationary point와 연결됨을 보이는 것이다.
@@ -566,10 +560,9 @@ Dual-update interval $K$는 $z$와 $u$를 얼마나 자주 갱신할지 결정�
 
 그러나 95% sparsity처럼 더 어려운 조건에서는 $K$가 너무 크면 sparse constraint 방향으로 충분히 자주 끌어주지 못해, 최종 sparse model의 성능이 떨어진다. 즉 $K$가 지나치게 크면 dual ascent의 빈도가 줄어 constraint satisfaction이 약해지고, 결국 projection 시 손실이 커진다. 이 결과는 SAFE가 단순히 한 번 sparse mask를 정해 놓고 학습하는 방식이 아니라, **지속적인 dual interaction을 통해 sparsity와 학습 dynamics를 맞춰 가는 알고리즘** 임을 다시 보여준다.
 
----
-
-### Review by 변정우, Aerospace Engineering Undergraduate Researcher
-### [Update - Time Log]
-
-#### 2026.05.03: [Draft] 전체적인 내용 리딩 완료 및 초안 작성
-#### 2026.05.03: [ver_1] GitHub Paper-Review 업로드 형식에 맞춰 heading level, reference block, section separator, review log 정리
+---  
+  
+**Review by 변정우, Aerospace Engineering Undergraduate Researcher**  
+**[Update - Time Log]**  
+* 2026.05.03: [Draft] 전체적인 내용 리딩 완료 및 초안 작성  
+* 2026.05.: [ver_1] part 1 수식 및 관련 내용 업데이트
