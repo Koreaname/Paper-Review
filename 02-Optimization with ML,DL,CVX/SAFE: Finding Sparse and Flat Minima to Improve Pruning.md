@@ -13,7 +13,7 @@
 
 ### Abstract
 
-이 논문은 pruning을 단순히 파라미터 수를 줄이는 문제로 다루지 않고, 희소성(sparsity) 과 평탄성(flatness) 을 동시에 만족하는 해를 찾는 제약 최적화 문제로 다시 정의한다. 기존 pruning은 높은 sparsity에서 성능 저하가 빈번했는데, 저자들은 그 원인을 단순한 용량 감소뿐 아니라 sharp한 손실 지형 위의 sparse solution 에서 찾는다. 따라서 목표는 단순히 많은 가중치를 0으로 만드는 것이 아니라, 작은 교란에도 성능이 급격히 나빠지지 않는 sparse subnetwork 를 찾는 데 있다.
+이 논문은 pruning을 단순히 파라미터 수를 줄이는 문제로 다루지 않고, sparsity 과 flatness를 동시에 만족하는 해를 찾는 constraint optimization problem으로 다시 정의한다. 기존 pruning은 높은 sparsity에서 성능 저하가 빈번했는데, 그 원인을 단순한 용량 감소뿐 아니라 sharp한 손실 지형 위의 sparse solution 에서 찾고자 한다. 따라서 목표는 단순히 많은 가중치를 0으로 만드는 것이 아니라, 작은 교란에도 성능이 급격히 나빠지지 않는 sparse subnetwork 를 찾는 데 있다.
 
 이를 위해 논문은 다음과 같은 sharpness-aware sparsity-constrained optimization 문제를 제안한다.
 
@@ -21,7 +21,7 @@ $$
 \min_{\|x\|_0 \le d} \max_{\|\epsilon\|_2 \le \rho} f(x+\epsilon)
 $$
 
-여기서 바깥 minimization은 희소한 해를 찾는 과정이고, 안쪽 maximization은 현재 해 주변의 작은 perturbation 중 가장 손실을 크게 만드는 방향을 고려함으로써 flat minima를 유도한다. 저자들은 이 문제를 augmented Lagrangian과 ADMM 관점으로 풀어내며, 연속적으로 학습되는 변수 $x$와 정확히 희소성을 담당하는 변수 $z$를 분리하여 최적화한다. 그 결과로 제안된 방법이 SAFE 이며, projection 자체를 일반화하여 magnitude 외의 saliency를 흡수하도록 확장한 버전이 SAFE+ 이다.
+여기서 바깥 minimization은 희소한 해를 찾는 과정이고, 안쪽 maximization은 현재 해 주변의 작은 perturbation 중 가장 손실을 크게 만드는 방향을 고려함으로써 flat minima를 유도한다. 이후 이 문제를 augmented Lagrangian과 ADMM 관점으로 풀어내며, 연속적으로 학습되는 변수 $x$와 정확히 희소성을 담당하는 변수 $z$를 분리하여 최적화한다. 그 결과로 제안된 방법이 SAFE이며, projection 자체를 일반화하여 magnitude 외의 saliency를 흡수하도록 확장한 버전이 SAFE+ 이다.
 
 실험 결과는 SAFE가 실제로 더 sparse하고 더 flat한 해로 수렴하며, 이미지 분류와 LLM pruning 모두에서 강한 성능을 보인다는 점을 보여준다. 특히 label noise, common corruption, adversarial perturbation 환경에서도 성능 저하가 덜해, 단순한 compression 기법을 넘어 robust sparse optimization framework 로 이해할 수 있는 여지를 제공한다.
 
@@ -31,11 +31,11 @@ $$
 
 서론의 출발점은 현대 딥러닝 모델의 과도한 계산량과 메모리 비용이다. 대규모 데이터와 초과매개변수화된 네트워크 덕분에 모델의 표현력은 크게 증가했지만, 그만큼 실제 배포와 추론 단계에서는 비용 문제가 심각해졌다. 이러한 배경에서 pruning, quantization, distillation 같은 model compression 기법이 활발히 연구되어 왔고, 그중 pruning은 중복된 파라미터를 제거하여 효율성을 높이는 가장 직접적인 방법 으로 자리 잡았다.
 
-하지만 pruning의 가장 근본적인 한계는, 높은 sparsity로 갈수록 성능 저하가 거의 필연처럼 나타난다는 점이다. 기존 연구들은 중요도가 낮은 가중치를 제거하거나, pruning 이후 retraining으로 성능을 복구하는 방향에 집중해 왔다. 이 논문은 그보다 한 단계 더 근본적인 질문을 던진다. 왜 sparse model은 성능이 쉽게 무너지는가? 저자들은 그 원인을 단순히 parameter count 감소로만 설명하지 않고, sparse solution이 놓이는 손실 지형의 기하학적 성질 에서 찾는다.
+하지만 pruning의 가장 근본적인 한계는, 높은 sparsity로 갈수록 성능 저하가 거의 필연처럼 나타난다는 점이다. 기존 연구들은 중요도가 낮은 가중치를 제거하거나, pruning 이후 retraining으로 성능을 복구하는 방향에 집중해 왔다. 이 논문은 그보다 한 단계 더 근본적인 질문을 던진다. '왜 sparse model은 성능이 쉽게 무너지는가?' 이 원인을 단순히 parameter count 감소로만 설명하지 않고, sparse solution이 놓이는 손실 지형의 기하학적 성질에서 찾고자 한다.
 
-이 문제의식은 flat minima 연구와 바로 연결된다. 잘 일반화되는 해는 sharp한 valley보다 넓고 완만한 valley에 놓이는 경향이 있으며, 이를 명시적으로 유도하는 대표적 방법이 SAM(Sharpness-Aware Minimization)이다. SAM은 현재 파라미터 한 점의 손실만 줄이는 것이 아니라, 그 주변 작은 neighborhood 전체에서 손실이 낮은 해를 찾도록 학습을 유도한다. 저자들은 pruning도 같은 관점으로 재해석할 수 있다고 본다. 즉, pruning이 잘 되려면 단순히 sparse한 해가 아니라 sparse하면서도 flat한 해 가 필요하다는 것이다.
+이 문제의식은 flat minima 연구와 바로 연결된다. 잘 일반화되는 해는 sharp한 valley보다 넓고 완만한 valley에 놓이는 경향이 있으며, 이를 명시적으로 유도하는 대표적 방법이 SAM(Sharpness-Aware Minimization)이다. SAM은 현재 파라미터 한 점의 손실만 줄이는 것이 아니라, 그 주변 작은 neighborhood 전체에서 손실이 낮은 해를 찾도록 학습을 유도한다. 이에 대하여 pruning도 같은 관점으로 재해석할 수 있다고 본다. 즉, pruning이 잘 되려면 단순히 sparse한 해가 아니라 sparse하면서도 flat한 해가 필요하다는 것이다.
 
-이 논문의 핵심 기여는 바로 여기서 나온다. 기존의 SAM-inspired pruning 연구들은 SAM으로 학습한 후 pruning이 잘 되길 기대하거나, compression에 덜 민감한 해를 찾는 방향에 머무는 경우가 많았다. 반면 이 논문은 pruning 자체를 sharpness-aware sparsity-constrained optimization 문제로 세우고, 이를 augmented Lagrangian 기반으로 명시적으로 푼다. 따라서 SAFE는 단순한 heuristic이 아니라, sparsity와 flatness를 하나의 목적 아래 공동으로 최적화하는 구조적 방법 이라는 점에서 의미가 있다.
+기존의 SAM-inspired pruning 연구들은 SAM으로 학습한 후 pruning이 잘 되길 기대하거나, compression에 덜 민감한 해를 찾는 방향에 머무는 경우가 많았다. 반면 이 논문은 pruning 자체를 sharpness-aware sparsity-constrained optimization 문제로 세우고, 이를 augmented Lagrangian 기반으로 명시적으로 푼다. 따라서 SAFE는 단순한 heuristic이 아니라, sparsity와 flatness를 하나의 목적 아래 공동으로 최적화하는 구조적 방법 이라는 점에서 의미가 있다.
 
 ---
 
@@ -47,19 +47,19 @@ $$
 
 #### 2.1. Sparsity
 
-희소성 유도는 오랫동안 기계학습, 통계, 신호처리에서 핵심 주제였다. 가장 기본적인 sparse optimization 문제는 다음과 같이 쓸 수 있다.
+가장 기본적인 sparse optimization 문제는 다음과 같이 쓸 수 있다.
 
 $$
 \min_{\|x\|_0 \le d} f(x)
 $$
 
-여기서 $f(x)$는 최소화하려는 목적함수, $\|x\|_0$는 0이 아닌 원소의 개수, $d$는 유지하려는 파라미터 수이다. 즉, 목표는 비영 원소가 $d$개 이하인 해들 중 손실이 가장 낮은 해 를 찾는 것이다. 문제는 $\ell_0$ 제약이 이산적이고 조합론적이어서, 정확한 최적해를 찾으려면 사실상 가능한 모든 mask 조합을 탐색해야 한다는 데 있다.
+여기서 $f(x)$는 최소화하려는 목적함수, $\|x\|_0$는 0이 아닌 원소의 개수, $d$는 유지하려는 파라미터 수이다. 즉, 목표는 비영 원소가 $d$개 이하인 해들 중 손실이 가장 낮은 해를 찾는 것이다. 문제는 $\ell_0$ 제약이 이산적이고 조합론적이어서, 정확한 최적해를 찾으려면 사실상 가능한 모든 mask 조합을 탐색해야 한다는 데 있다.
 
 이 어려움 때문에 고전적으로는 여러 우회 전략이 사용되었다. LASSO는 $\ell_0$ 제약을 $\ell_1$ regularization으로 완화했고, FISTA나 iterative hard thresholding은 proximal 혹은 thresholding 기반으로 sparse solution을 효율적으로 찾으려 했다. 신경망 분야에서는 OBD와 OBS처럼 2차 정보를 활용해 특정 파라미터를 제거했을 때 손실 증가를 근사하는 방법도 등장했다.
 
 딥러닝에서 sparsity는 적용 시점에 따라 크게 세 종류로 나뉜다. 학습 전 pruning 은 sparse training 효율을 높이는 데 유리하고, 학습 중 pruning 은 모델이 훈련되는 과정에서 원하는 sparse 구조로 유도할 수 있어 일반적으로 가장 좋은 성능을 내는 편이며, 학습 후 pruning 은 이미 학습된 대형 모델을 낮은 비용으로 압축하는 데 적합하다. 특히 LLM에서는 전체 재학습이 거의 불가능하므로, block-wise reconstruction error minimization 같은 post-training pruning이 널리 쓰인다.
 
-그럼에도 불구하고, 높은 sparsity에서 원래 dense model의 성능을 유지하는 일은 여전히 어렵다. 결국 많은 방법이 다양한 saliency score나 heuristic에 의존하게 되는데, 이 논문은 바로 그 지점에서 한 걸음 더 나아가 희소성 자체를 제약 최적화 문제로 보고, 그 안에 flatness까지 포함하는 원리적 접근 을 시도한다.
+그럼에도 높은 sparsity 내 기존 dense model의 성능을 유지하는 일은 여전히 어렵다. 결국 많은 방법이 다양한 saliency score나 heuristic에 의존하게 되는데, 이 논문에선 희소성 자체를 제약 최적화 문제에 대해 그 안에 flatness까지 포함하는 원리적 접근을 시도한다.
 
 ---
 
@@ -67,13 +67,13 @@ $$
 
 딥러닝 최적화 연구는 잘 일반화되는 해가 종종 flat minima에 놓인다는 경험적 사실을 반복적으로 보여 왔다. flat minima란, 파라미터를 조금 움직여도 손실이 급격히 커지지 않는 넓고 완만한 영역을 의미한다. 반대로 sharp minima는 아주 작은 perturbation에도 손실이 크게 증가하는 해이다. 이 관점은 mini-batch training의 일반화 성질, large-batch 학습의 일반화 gap, 그리고 모델 robustness와도 깊게 연결되어 있다.
 
-이러한 통찰에서 출발한 대표적 방법이 SAM이다. SAM은 다음과 같은 min-max 문제를 푼다.
+이러한 연구에서 나오게 된 대표적 방법이 SAM이다.  
 
 $$
 \min_x \max_{\|\epsilon\|_2 \le \rho} f(x+\epsilon)
 $$
 
-의미는 명확하다. 현재 점 $x$ 하나의 손실만 줄이는 것이 아니라, 반경 $\rho$ 안에 있는 perturbation 전체를 고려했을 때도 손실이 낮은 해를 찾겠다는 것이다. 만약 어떤 해가 sharp하다면, 아주 작은 $\epsilon$만으로도 손실이 크게 증가하므로 inner maximization 값이 커지고, outer minimization은 그러한 해를 피하게 된다. 결과적으로 SAM은 자연스럽게 flat minima를 선호한다.
+수식의 의미는 현재 점 $x$ 하나의 손실만 줄이는 것이 아니라, 반경 $\rho$ 안에 있는 perturbation 전체를 고려했을 때도 손실이 낮은 해를 찾겠다는 것이다. 만약 어떤 해가 sharp하다면, 아주 작은 $\epsilon$만으로도 손실이 크게 증가하므로 inner maximization 값이 커지고, outer minimization은 그러한 해를 피하게 된다. 결과적으로 SAM은 자연스럽게 flat minima를 선호한다.
 
 1차 Taylor approximation을 쓰면 inner maximization의 해는 gradient 방향으로 근사된다.
 
@@ -83,13 +83,13 @@ $$
 
 따라서 실제 업데이트는 현재 파라미터에서 gradient 방향으로 약간 이동한 지점의 gradient를 계산하여 수행된다. 이 방식은 다양한 비전과 언어 과제에서 일반화와 robustness 향상에 효과적이라고 알려져 있다.
 
-이 논문이 중요한 이유는 바로 이 sharpness-aware 관점을 pruning에 직접 접목했다는 데 있다. 즉, sparse model의 성능 저하를 줄이기 위해서는 단순히 어느 가중치를 남길지보다, 남겨진 sparse model이 어떤 손실 지형 위에 놓이는지 가 중요하다고 본다. Method 장의 SAFE는 바로 이 문제의식을 수식화한 결과물이다.
+이 논문이 중요한 이유는 바로 이 sharpness-aware 관점을 pruning에 직접 접목했다는 데 있다. 즉, sparse model의 성능 저하를 줄이기 위해서는 단순히 어느 가중치를 남길지보다, 남겨진 sparse model이 어떤 손실 지형 위에 놓이는지가 중요하다고 본다. Method 장의 SAFE는 바로 이 문제의식을 수식화한 결과물이다.
 
 ---
 
 ### 3. Method
 
-이 장은 논문의 핵심이다. 저자들은 pruning을 “크기가 작은 가중치를 제거하는 과정”이 아니라, 희소성과 평탄성을 동시에 만족하는 sparse solution을 찾는 constrained robust optimization 문제 로 재정의한다. 그리고 그 문제를 실제로 풀기 위해 augmented Lagrangian과 ADMM 구조를 사용한다.
+저자들은 앞선 작업으로부터 pruning을 크기가 작은 가중치를 제거하는 과정이 아니라, 희소성과 평탄성을 동시에 만족하는 sparse solution을 찾는 constrained robust optimization 문제로 재정의한다. 그리고 그 문제를 실제로 풀기 위해 augmented Lagrangian과 ADMM 구조를 사용한다.
 
 ---
 
@@ -101,24 +101,22 @@ $$
 \min_{\|x\|_0 \le d} \max_{\|\epsilon\|_2 \le \rho} f(x+\epsilon)
 $$
 
-이 식은 논문의 아이디어를 가장 압축적으로 드러낸다. 바깥 minimization은 sparse constraint를 만족하는 파라미터를 찾는 과정이고, 안쪽 maximization은 그 주변의 가장 불리한 perturbation까지 고려하는 과정이다. 따라서 목적은 단순히 손실이 낮은 sparse model이 아니라, 작은 교란에도 손실이 급격히 증가하지 않는 sparse and flat solution 을 찾는 것이다.
+바깥 minimization은 sparse constraint를 만족하는 파라미터를 찾는 과정이고, 안쪽 maximization은 그 주변의 가장 불리한 perturbation까지 고려하는 과정이다. 따라서 목적은 단순히 손실이 낮은 sparse model이 아니라, 작은 교란에도 손실이 급격히 증가하지 않는 sparse and flat solution 을 찾는 것이다.
 
-여기서 $d$는 남길 파라미터 수이며, $\rho$는 flatness를 얼마나 강하게 요구할지 결정하는 반경이다. $\rho$가 커질수록 더 넓은 neighborhood에서 안정적인 해가 선호된다. 이 formulation은 pruning의 성능 저하를 단지 capacity 감소의 부산물이 아니라, geometry-aware optimization의 실패 로 해석할 수 있게 만든다.
+여기서 $d$는 남길 파라미터 수이며, $\rho$는 flatness를 얼마나 강하게 요구할지 결정하는 반경이다. $\rho$가 커질수록 더 넓은 neighborhood에서 안정적인 해가 선호된다. 이 formulation은 pruning의 성능 저하를 단지 capacity 감소의 부산물이 아니라, geometry-aware optimization의 실패로 해석할 수 있게 만든다.
 
 ---
 
 #### 3.2. Augmented Lagrangian Based Approach
 
-위 문제를 직접 푸는 것은 어렵다. $\ell_0$ 제약은 이산적이고, 신경망 손실은 강한 비선형성을 가지므로 순수한 Lagrangian duality나 projected gradient descent는 각각 한계를 가진다. Lagrangian만으로는 $\ell_0$ 제약이 다루기 어렵고, 단순 projection은 비선형 딥넷에서 학습을 지나치게 불안정하게 만들 수 있다. 저자들은 이 둘의 장점을 결합하기 위해 augmented Lagrangian 을 사용한다.
+하지만 위 문제는 직접적으로 푸는 것은 불가능하다. $\ell_0$ 제약은 이산적이고, 신경망 손실은 강한 비선형성을 가지므로 순수한 Lagrangian duality나 projected gradient descent는 각각 한계를 가진다. Lagrangian만으로는 $\ell_0$ 제약이 다루기 어렵고, 단순 projection은 비선형 딥넷에서 학습을 지나치게 불안정하게 만들 수 있다. 이러한 단점을 해결하고 장점을 결합하기 위해 augmented Lagrangian 을 사용한다.
 
-먼저 변수 분할(variable splitting)을 도입하여, objective minimization을 담당하는 변수 $x$와 sparse constraint를 직접 만족하는 변수 $z$를 분리한다.
+먼저 변수 분할을 도입하여, objective minimization을 담당하는 변수 $x$와 sparse constraint를 직접 만족하는 변수 $z$를 분리한다.
 
 $$
 \min_{x,z} \max_{\|\epsilon\|_2 \le \rho} f(x+\epsilon) + I_{\|\cdot\|_0 \le d}(z)
 \quad \text{s.t. } x=z
 $$
-
-여기서 indicator function은 다음과 같다.
 
 $$
 I_{\|\cdot\|_0 \le d}(z)=
@@ -127,6 +125,8 @@ I_{\|\cdot\|_0 \le d}(z)=
 \infty & \text{otherwise}
 \end{cases}
 $$
+
+(indicator function)
 
 이후 penalty term을 더한 augmented Lagrangian을 구성하면, scaled dual variable $u$를 사용하여 다음과 같은 반복 구조를 얻는다.
 
@@ -148,13 +148,13 @@ $$
 u^{k+1}=u^k + x^{k+1}-z^{k+1}
 $$
 
-이 세 식의 역할은 분명하다. $x$-step은 손실과 flatness를 고려해 연속적으로 최적화되는 단계이고, $z$-step은 현재 해를 정확히 sparse set 위로 projection하는 단계이며, $u$-step은 둘의 차이를 누적해 이후 반복에서 일치성을 강제한다. 결국 SAFE는 학습 가능한 dense-like 변수와 정확한 sparse proxy를 동시에 유지하면서, 둘을 점진적으로 일치시키는 구조 로 이해할 수 있다.
+$x$-step은 손실과 flatness를 고려해 연속적으로 최적화되는 단계이고, $z$-step은 현재 해를 정확히 sparse set 위로 projection하는 단계이며, $u$-step은 둘의 차이를 누적해 이후 반복에서 일치성을 강제한다. 결국 SAFE는 학습 가능한 dense-like 변수와 정확한 sparse proxy를 동시에 유지하면서, 둘을 점진적으로 일치시키는 구조로 이해할 수 있다.
 
 ---
 
 #### 3.3. x-minimization
 
-SAFE의 핵심 계산은 $x$-update에서 일어난다. 먼저 inner maximization은 SAM과 같은 방식으로 1차 근사를 이용해 푼다.
+먼저 inner maximization은 SAM과 같은 방식으로 1차 근사를 이용해 푼다.
 
 $$
 \epsilon^\star(x)
@@ -209,7 +209,7 @@ x_k^{(t)}
 \right)
 $$
 
-이 식은 SAFE의 본질을 잘 보여준다. 첫 번째 항은 sharpness-aware gradient 로 flat minima를 찾게 하고, 두 번째 항은 sparsity constraint에 가까워지도록 하는 penalty term 이다. 즉, SAFE의 $x$-update는 flatness와 sparsity를 번갈아 강제하는 것이 아니라, 하나의 gradient update 안에서 동시에 반영 한다.
+첫 번째 항은 sharpness-aware gradient로 flat minima를 찾게 하고, 두 번째 항은 sparsity constraint에 가까워지도록 하는 penalty term이다. 즉, SAFE의 $x$-update는 flatness와 sparsity를 번갈아 강제하는 것이 아니라, 하나의 gradient update 안에서 동시에 반영 한다.
 
 ---
 
@@ -246,7 +246,7 @@ SNIP류의 1차 민감도 기반 pruning과 연결된다.
 
 LLM pruning의 Wanda는 특정 layer activation $A$에 대해 $P=\operatorname{diag}(A^\top A)$ 로 해석할 수 있다.
 
-즉 SAFE+의 의미는 “새로운 pruning score 하나를 제안했다”는 데 있지 않다. 더 정확히는, projection metric을 바꾸는 방식으로 다양한 saliency를 제약 최적화 내부에 통합했다 는 데 있다. 이 점이 SAFE+를 단순한 heuristic 확장이 아니라, 보다 일반적인 sparse optimization framework로 만들어 준다.
+즉 SAFE+의 의미는 새로운 pruning score 하나를 제안했다 것이 아닌, projection metric을 바꾸는 방식으로 다양한 saliency를 제약 최적화 내부에 통합했다는데에 있다. 이 점이 SAFE+를 단순한 heuristic 확장이 아니라, 보다 일반적인 sparse optimization framework로 만들어 준다.
 
 ---
 
@@ -254,7 +254,7 @@ LLM pruning의 Wanda는 특정 layer activation $A$에 대해 $P=\operatorname{d
 
 최종 알고리즘은 크게 세 흐름으로 요약된다. 첫째, $x$는 sharpness-aware gradient를 통해 flat한 방향으로 학습된다. 둘째, 일정 간격 $K$마다 현재의 $x+u$를 sparse set에 projection하여 $z$를 갱신한다. 셋째, dual variable $u$를 업데이트하여 $x$와 $z$의 차이가 장기적으로 줄어들게 만든다.
 
-실제로 논문 알고리즘은 다음과 같은 직관으로 읽을 수 있다. SAFE는 학습 도중 항상 현재 파라미터가 “가장 가까운 sparse point”에서 얼마나 떨어져 있는지를 관찰하고, 그 sparse point를 $z$에 기록한다. 그런 다음 $x$를 학습할 때는 단순히 training loss만 줄이는 것이 아니라, flat minima를 찾는 방향으로 움직이면서 동시에 sparse proxy 쪽으로도 조금씩 끌려가게 만든다. 이 덕분에 마지막에 갑자기 hard pruning을 가하는 방법보다 손실 폭증이 덜하다.
+실제로 논문 알고리즘은 다음과 같은 직관으로 읽을 수 있다. SAFE는 학습 도중 항상 현재 파라미터가 가장 가까운 sparse point에서 얼마나 떨어져 있는지를 관찰하고, 그 sparse point를 $z$에 기록한다. 그런 다음 $x$를 학습할 때는 단순히 training loss만 줄이는 것이 아니라, flat minima를 찾는 방향으로 움직이면서 동시에 sparse proxy 쪽으로도 조금씩 끌려가게 만든다. 이 덕분에 마지막에 갑자기 hard pruning을 가하는 방법보다 손실 폭증이 덜하다.
 
 논문은 실제 비전 실험에서 penalty parameter $\lambda$를 0에서 목표값까지 cosine 형태로 증가시키는 스케줄링을 사용한다. 이는 초기 학습 단계에서는 표현 학습을 충분히 진행하고, 후반부로 갈수록 sparsity constraint를 강하게 반영하기 위한 설계이다. 이 선택은 Appendix의 ablation에서 실제로 성능 이점을 보인다.
 
@@ -274,7 +274,7 @@ $$
 
 SAFE의 $x$-update는 정확한 $\nabla \hat{L}(x)$ 대신, perturbation이 반영된 sharpness-aware gradient를 사용한다. 논문은 이 둘의 차이가 smoothness로 제어 가능하며, step size와 perturbation radius가 적절한 조건을 만족하면 결국 $\nabla \hat{L}(x^{(t)}) \to 0$ 임을 보인다. 다시 말해, $x$-update는 augmented Lagrangian에 대한 stationary point 쪽으로 수렴한다.
 
-이후 기존 ADMM 수렴 결과를 결합하여, SAFE의 limit point가 원래 sparsity-constrained optimization 문제의 $\delta$-stationary point가 됨을 보인다. 이 결과는 “SAFE가 sparse and flat solution을 찾는 방향으로 설계되었을 뿐 아니라, 적어도 sparse constrained optimization의 stationary point라는 엄밀한 의미에서 잘 정의된 알고리즘”임을 보여준다.
+이후 기존 ADMM 수렴 결과를 결합하여, SAFE의 limit point가 원래 sparsity-constrained optimization 문제의 $\delta$-stationary point가 됨을 보인다. 이 결과는 SAFE가 sparse and flat solution을 찾는 방향으로 설계되었을 뿐 아니라, 적어도 sparse constrained optimization의 stationary point라는 엄밀한 의미에서 잘 정의된 알고리즘임을 보여준다.
 
 ---
 
@@ -565,4 +565,6 @@ Dual-update interval $K$는 $z$와 $u$를 얼마나 자주 갱신할지 결정�
 Review by 변정우, Aerospace Engineering Undergraduate Researcher  
 [Update - Time Log]  
 * 2026.05.03: [Draft] 전체적인 내용 리딩 완료 및 초안 작성  
-* 2026.05.: [ver_1] part 1 수식 및 관련 내용 업데이트
+* 2026.05.04: [ver_1] part 1 수식 및 관련 내용 업데이트
+* 2026.05.06: [ver_2] part 2,3,4 수식 및 관련 내용 업데이트
+* 2026.05.0: [ver_1] part 1 수식 및 관련 내용 업데이트
