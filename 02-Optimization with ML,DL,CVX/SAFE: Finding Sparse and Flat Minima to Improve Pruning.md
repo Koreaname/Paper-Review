@@ -117,9 +117,13 @@ $\rho$가 커질수록 더 넓은 neighborhood에서 안정적인 해가 선호�
 먼저 변수 분할을 도입하여, objective minimization을 담당하는 변수 $x$와 sparse constraint를 직접 만족하는 변수 $z$를 분리한다.
 
 $$
-\min_{x,z} \max_{\lVert \epsilon\rVert_2 \le \rho} f(x+\epsilon)
-+ I_{\lVert \cdot \rVert_0 \le d}(z)
-\quad \text{s.t. } x=z
+\min_{x,z}
+\max_{\lVert \epsilon\rVert_2 \le \rho}
+f(x+\epsilon)
++
+I_{\lVert \cdot \rVert_0 \le d}(z)
+\quad
+\text{s.t. } x=z
 $$
 
 $$
@@ -135,12 +139,19 @@ $$
 이후 penalty term을 더한 augmented Lagrangian을 구성하면, scaled dual variable $u$를 사용하여 다음과 같은 반복 구조를 얻는다.
 
 $$
-x^{k+1}= \arg\min_x \max_{\lVert \epsilon\rVert_2 \le \rho} f(x+\epsilon)
-+ \frac{\lambda}{2}\lVert x-z^k+u^k\rVert_2^2
+x^{k+1}=
+\arg\min_x
+\max_{\lVert \epsilon\rVert_2 \le \rho}
+f(x+\epsilon)
++
+\frac{\lambda}{2}
+\lVert x-z^k+u^k\rVert_2^2
 $$
 
 $$
-z^{k+1}= \operatorname{proj}_{\lVert \cdot \rVert_0 \le d}(x^{k+1}+u^k)
+z^{k+1}=
+\mathrm{proj}_{\lVert \cdot \rVert_0 \le d}
+(x^{k+1}+u^k)
 $$
 
 $$
