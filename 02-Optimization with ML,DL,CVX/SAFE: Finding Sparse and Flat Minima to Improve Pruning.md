@@ -74,7 +74,7 @@ $$
 \min_x \max_{\lVert \epsilon\rVert_2 \le \rho} f(x+\epsilon)
 $$
 
-수식의 의미는 현재 점 $x$ 하나의 손실만 줄이는 것이 아니라, 반경 $\rho$ 안에 있는 perturbation 전체를 고려했을 때도 손실이 낮은 해를 찾겠다는 것이다. 만약 어떤 해가 sharp하다면, 아주 작은 $\epsilon$만으로도 손실이 크게 증가하므로 inner maximization 값이 커지고, outer minimization은 그러한 해를 피하게 된다. 결과적으로 SAM은 자연스럽게 flat minima를 선호한다.
+수식의 의미는 현재 점 $x$ 하나의 손실만 줄이는 것이 아니라, 반경 $\rho$ 안에 있는 perturbation 전체를 고려했을 때도 손실이 낮은 해를 찾겠다는 것이다. 만약 어떤 해가 sharp하다면, 아주 작은 $\epsilon$만으로도 손실이 크게 증가하므로 inner maximization 값이 커지고, outer minimization은 그러한 해를 피하게 된다. 결과적으로 SAM은 flat minima를 선호하게 된다.
 
 1차 Taylor approximation을 쓰면 inner maximization의 해는 gradient 방향으로 근사된다.
 
@@ -84,7 +84,7 @@ $$
 
 따라서 실제 업데이트는 현재 파라미터에서 gradient 방향으로 약간 이동한 지점의 gradient를 계산하여 수행된다. 이 방식은 다양한 비전과 언어 과제에서 일반화와 robustness 향상에 효과적이라고 알려져 있다.
 
-이 논문이 중요한 이유는 바로 이 sharpness-aware 관점을 pruning에 직접 접목했다는 데 있다. 즉, sparse model의 성능 저하를 줄이기 위해서는 단순히 어느 가중치를 남길지보다, 남겨진 sparse model이 어떤 손실 지형 위에 놓이는지가 중요하다고 본다.
+이 접근 방식은 sharpness-aware 관점을 pruning에 직접 접목했다는 데 있다. 즉, sparse model의 성능 저하를 줄이기 위해서는 단순히 어느 가중치를 남길지보다, 남겨진 sparse model이 어떤 손실 지형 위에 놓이는지가 중요하다고 본다.
 
 ---
 
@@ -112,7 +112,7 @@ $\rho$가 커질수록 더 넓은 neighborhood에서 안정적인 해가 선호�
 
 #### 3.2. Augmented Lagrangian Based Approach
 
-하지만 위 문제는 개별적인 방식으로 직접 푸는 것은 불가능하다. $\ell_0$ 제약은 이산적이고, 신경망 손실은 강한 비선형성을 가지므로 순수한 Lagrangian duality나 projected gradient descent는 각각 한계를 가진다. Lagrangian만으로는 $\ell_0$ 제약이 다루기 어렵고, 단순 projection은 비선형 딥넷에서 학습을 지나치게 불안정하게 만들 수 있다. 이러한 단점을 해결하고 장점을 결합하기 위해 augmented Lagrangian 을 사용한다.
+하지만 위 문제는 개별적인 방식으로 직접 푸는 것은 불가능하다. $\ell_0$ 제약은 이산적이고, 신경망 손실은 강한 비선형성을 가지므로 순수한 Lagrangian duality나 projected gradient descent는 각각 한계를 가진다. Lagrangian만으로는 $\ell_0$ 제약이 다루기 어렵고, 단순 projection은 비선형 deep set에서 학습을 지나치게 불안정하게 만들 수 있다. 이러한 단점을 해결하고 장점을 결합하기 위해 augmented Lagrangian을 사용한다.
 
 먼저 변수 분할을 도입하여, objective minimization을 담당하는 변수 $x$와 sparse constraint를 직접 만족하는 변수 $z$를 분리한다.
 
@@ -251,7 +251,7 @@ SNIP류의 1차 민감도 기반 pruning과 연결된다.
 
 ##### IF Wanda projection,
 
-LLM pruning의 Wanda는 특정 layer activation $A$에 대해 $P=\mathrm{diag}(A^\top A)$ 로 해석할 수 있다.
+LLM pruning의 Wanda는 특정 layer activation $A$에 대해 $P=\mathrm{diag}(A^\top A)$로 해석할 수 있다.
 
 즉 SAFE+의 의미는 새로운 pruning score 하나를 제안했다 것이 아닌, projection metric을 바꾸는 방식으로 다양한 saliency를 제약 최적화 내부에 통합했다는데에 있다. 이 점이 SAFE+를 단순한 heuristic 확장이 아니라, 보다 일반적인 sparse optimization framework로 만들어 준다.
 
@@ -261,7 +261,7 @@ LLM pruning의 Wanda는 특정 layer activation $A$에 대해 $P=\mathrm{diag}(A
 
 최종 알고리즘은 크게 세 흐름으로 요약된다. 첫째, $x$는 sharpness-aware gradient를 통해 flat한 방향으로 학습된다. 둘째, 일정 간격 $K$마다 현재의 $x+u$를 sparse set에 projection하여 $z$를 갱신한다. 셋째, dual variable $u$를 업데이트하여 $x$와 $z$의 차이가 장기적으로 줄어들게 만든다.
 
-실제로 논문 알고리즘은 다음과 같은 직관으로 읽을 수 있다. SAFE는 학습 도중 항상 현재 파라미터가 가장 가까운 sparse point에서 얼마나 떨어져 있는지를 관찰하고, 그 sparse point를 $z$에 기록한다. 그런 다음 $x$를 학습할 때는 단순히 training loss만 줄이는 것이 아니라, flat minima를 찾는 방향으로 움직이면서 동시에 sparse proxy 쪽으로도 조금씩 끌려가게 만든다. 이 덕분에 마지막에 갑자기 hard pruning을 가하는 방법보다 손실 폭증이 덜하다.
+실제로 논문 속 알고리즘은 다음과 같은 직관을 따른다. SAFE는 학습 도중 항상 현재 파라미터가 가장 가까운 sparse point에서 얼마나 떨어져 있는지를 관찰하고, 그 sparse point를 $z$에 기록한다. 그런 다음 $x$를 학습할 때는 단순히 training loss만 줄이는 것이 아니라, flat minima를 찾는 방향으로 움직이면서 동시에 sparse proxy 쪽으로도 조금씩 끌려가게 만든다. 이 덕분에 마지막에 갑자기 hard pruning을 가하는 방법보다 손실 폭증이 덜하다.
 
 논문은 실제 비전 실험에서 penalty parameter $\lambda$를 0에서 목표값까지 cosine 형태로 증가시키는 스케줄링을 사용한다. 이는 초기 학습 단계에서는 표현 학습을 충분히 진행하고, 후반부로 갈수록 sparsity constraint를 강하게 반영하기 위한 설계이다. 이 선택은 Appendix의 ablation에서 실제로 성능 이점을 보인다.
 
@@ -277,9 +277,9 @@ $$
 \hat{L}(x)=f(x)+\frac{\lambda}{2}\lVert x-z+u\rVert_2^2
 $$
 
-부록의 분석에 따르면, $f$가 $\beta$-smooth이고 $\mu$-weakly convex이면 $\hat{L}(x)$는 $(\beta+\lambda)$-smooth하고, $\lambda>\mu$일 때 $(\lambda-\mu)$-strongly convex가 된다. 즉, penalty term은 단순히 제약 위반을 벌점화하는 역할만 하는 것이 아니라, $x$-subproblem의 기하를 더 안정적인 방향으로 바꿔 준다.
+(Appendix 참고)$f$가 $\beta$-smooth이고 $\mu$-weakly convex이면 $\hat{L}(x)$는 $(\beta+\lambda)$-smooth하고, $\lambda>\mu$일 때 $(\lambda-\mu)$-strongly convex가 된다. 즉, penalty term은 단순히 제약 위반을 벌점화하는 역할만 하는 것이 아니라, $x$-subproblem의 기하를 더 안정적인 방향으로 바꿔 준다.
 
-SAFE의 $x$-update는 정확한 $\nabla \hat{L}(x)$ 대신, perturbation이 반영된 sharpness-aware gradient를 사용한다. 논문은 이 둘의 차이가 smoothness로 제어 가능하며, step size와 perturbation radius가 적절한 조건을 만족하면 결국 $\nabla \hat{L}(x^{(t)}) \to 0$ 임을 보인다. 다시 말해, $x$-update는 augmented Lagrangian에 대한 stationary point 쪽으로 수렴한다.
+SAFE의 $x$-update는 정확한 $\nabla \hat{L}(x)$ 대신, perturbation이 반영된 sharpness-aware gradient를 사용한다, 이는 이 둘의 차이가 smoothness로 제어 가능하며, step size와 perturbation radius가 적절한 조건을 만족하면 결국 $\nabla \hat{L}(x^{(t)}) \to 0$임을 보인다. 다시 말해, $x$-update는 augmented Lagrangian에 대한 stationary point 쪽으로 수렴한다.
 
 이후 기존 ADMM 수렴 결과를 결합하여, SAFE의 limit point가 원래 sparsity-constrained optimization 문제의 $\delta$-stationary point가 됨을 보인다. 이 결과는 SAFE가 sparse and flat solution을 찾는 방향으로 설계되었을 뿐 아니라, 적어도 sparse constrained optimization의 stationary point라는 엄밀한 의미에서 잘 정의된 알고리즘임을 보여준다.
 
@@ -575,5 +575,5 @@ Review by 변정우, Aerospace Engineering Undergraduate Researcher
 [Update - Time Log]  
 * 2026.05.03: [Draft] 전체적인 내용 리딩 완료 및 초안 작성  
 * 2026.05.04: [ver_1] part 1 수식 및 관련 내용 업데이트
-* 2026.05.06: [ver_2] part 2,3,4 수식 및 관련 내용 업데이트
+* 2026.05.06: [ver_2] part 2,3 수식 및 관련 내용 업데이트
 * 2026.05.0: [ver_1] part 1 수식 및 관련 내용 업데이트
