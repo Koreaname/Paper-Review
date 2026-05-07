@@ -177,7 +177,8 @@ $$
 
 $$
 x^{k+1}= \arg\min_x f(x+\epsilon^\star(x))
-+ \frac{\lambda}{2}\lVert x-z^k+u^k\rVert_2^2
++
+\frac{\lambda}{2}\lVert x-z^k+u^k\rVert_2^2
 $$
 
 이제 gradient를 계산하면, SAM과 마찬가지로 $\nabla \epsilon^\star(x)$에 의한 고차항을 무시하는 근사 아래 다음 식을 얻는다.
@@ -185,13 +186,14 @@ $$
 $$
 \nabla_x \left(
 f(x+\epsilon^\star(x))
-+ \frac{\lambda}{2}\lVert x-z^k+u^k\rVert_2^2
-\right)
-=
++
+\frac{\lambda}{2}\lVert x-z^k+u^k\rVert_2^2
+\right) =
 \nabla f\!\left(
 x+\rho\frac{\nabla f(x)}{\lVert \nabla f(x)\rVert_2}
 \right)
-+ \lambda(x-z^k+u^k)
++
+\lambda(x-z^k+u^k)
 $$
 
 따라서 실제 업데이트는 다음과 같다.
