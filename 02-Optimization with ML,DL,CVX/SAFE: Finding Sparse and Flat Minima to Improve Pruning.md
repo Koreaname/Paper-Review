@@ -257,7 +257,7 @@ LLM pruning의 Wanda는 특정 layer activation $A$에 대해 $P=\operatorname{d
 먼저 다음 augmented objective를 정의한다.
 
 $$
-\hat{L}(x)=f(x)+\frac{\lambda}{2}\|x-z+u\|_2^2
+\hat{L}(x)=f(x)+\frac{\lambda}{2}\lVert x-z+u\rVert_2^2
 $$
 
 부록의 분석에 따르면, $f$가 $\beta$-smooth이고 $\mu$-weakly convex이면 $\hat{L}(x)$는 $(\beta+\lambda)$-smooth하고, $\lambda>\mu$일 때 $(\lambda-\mu)$-strongly convex가 된다. 즉, penalty term은 단순히 제약 위반을 벌점화하는 역할만 하는 것이 아니라, $x$-subproblem의 기하를 더 안정적인 방향으로 바꿔 준다.
@@ -310,7 +310,7 @@ LLM 실험은 SAFE의 일반성을 보여주는 파트이다. 논문은 LLaMA-2 
 
 논문이 흥미롭게 지적하는 부분은 ADMM이 label noise를 완화하기 위해 sparsity 자체에 과도하게 의존하는 경향을 보인다는 점이다. 25% noise에서는 sparse double descent 유사 패턴까지 나타난다. 반면 SAFE에서는 이런 불안정성이 거의 보이지 않는다. 이는 sharpness minimization이 일종의 regularizer처럼 작동해 noisy label에 대한 과적합을 줄였다고 해석할 수 있다.
 
-추론 시 corruption에서도 SAFE의 이점은 유지된다. CIFAR-10C의 common corruption 평균 정확도는 90% sparsity에서 ADMM 70.06, SAFE 73.98이며, $l_\infty$-PGD에서는 ADMM 49.81, SAFE 56.43이다. 99% sparsity처럼 더 극단적인 조건에서도 SAFE는 common corruption과 adversarial setting 모두에서 더 강한 성능을 보인다. 즉 SAFE의 flatness 유도는 일반화 성능 향상뿐 아니라 노이즈와 공격에 대한 회복력 향상 으로도 연결된다.
+추론 시 corruption에서도 SAFE의 이점은 유지된다. CIFAR-10C의 common corruption 평균 정확도는 90% sparsity에서 ADMM 70.06, SAFE 73.98이며, $\ell_\infty$-PGD에서는 ADMM 49.81, SAFE 56.43이다. 99% sparsity처럼 더 극단적인 조건에서도 SAFE는 common corruption과 adversarial setting 모두에서 더 강한 성능을 보인다. 즉 SAFE의 flatness 유도는 일반화 성능 향상뿐 아니라 노이즈와 공격에 대한 회복력 향상 으로도 연결된다.
 
 ---
 
@@ -353,7 +353,7 @@ LLM 실험은 SAFE의 일반성을 보여주는 파트이다. 논문은 LLaMA-2 
 우선 다음 augmented objective를 둔다.
 
 $$
-\hat{L}(x)=f(x)+\frac{\lambda}{2}\|x-z+u\|_2^2
+\hat{L}(x)=f(x)+\frac{\lambda}{2}\lVert x-z+u\rVert_2^2
 $$
 
 이 함수는 penalty term 덕분에 원래 목적함수보다 더 좋은 기하학적 성질을 가진다. 부록은 $f$가 $\beta$-smooth, $\mu$-weakly convex일 때 $\hat{L}$이 $(\beta+\lambda)$-smooth하고, $\lambda>\mu$이면 $(\lambda-\mu)$-strongly convex함을 먼저 보인다. 이 성질이 뒤의 수렴 증명의 기반이 된다.
@@ -366,18 +366,20 @@ $$
 
 $$
 g^{(t)}
-=
-\nabla f\!\left(
-x^{(t)} + \rho^{(t)} \frac{\nabla f(x^{(t)})}{\|\nabla f(x^{(t)})\|}
+=\nabla f\!\left(
+x^{(t)}
++ \rho^{(t)}
+\frac{\nabla f(x^{(t)})}
+{\lVert \nabla f(x^{(t)})\rVert}
 \right)
-+
-\lambda(x^{(t)}-z+u)
++ \lambda(x^{(t)}-z+u)
 $$
 
 로 두고, smoothness를 이용해
 
 $$
-\|g^{(t)}-\nabla \hat{L}(x^{(t)})\| \le \beta \rho^{(t)}
+\lVert g^{(t)}-\nabla \hat{L}(x^{(t)})\rVert
+\le \beta \rho^{(t)}
 $$
 
 와 같은 형태의 상계를 얻는다. 즉 perturbation으로 인한 bias는 $\rho^{(t)}$에 비례하여 제어된다.
