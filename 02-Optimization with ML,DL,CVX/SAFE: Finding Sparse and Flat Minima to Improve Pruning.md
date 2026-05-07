@@ -13,7 +13,7 @@
 
 ### Abstract
 
-이 논문은 pruning을 단순히 파라미터 수를 줄이는 문제로 다루지 않고, sparsity 과 flatness를 동시에 만족하는 해를 찾는 constraint optimization problem으로 다시 정의한다. 기존 pruning은 높은 sparsity에서 성능 저하가 빈번했는데, 그 원인을 단순한 용량 감소뿐 아니라 sharp한 손실 지형 위의 sparse solution 에서 찾고자 한다. 따라서 목표는 단순히 많은 가중치를 0으로 만드는 것이 아니라, 작은 교란에도 성능이 급격히 나빠지지 않는 sparse subnetwork 를 찾는 데 있다.
+이 논문은 pruning을 다른 시각으로 접근하여 해석하였다. 이를 단순히 파라미터 수를 줄이는 문제로 다루지 않고, sparsity 과 flatness를 동시에 만족하는 해를 찾는 constraint optimization problem으로 다시 정의한다. 기존 pruning은 높은 sparsity에서 성능 저하가 발생하였는데, 그 원인을 단순한 용량 감소뿐 아니라 sharp한 손실 지형 위의 sparse solution에서 찾고자 한다. 따라서 목표는 단순히 많은 가중치를 0으로 만드는 것이 아니라, 작은 교란에도 성능이 급격히 나빠지지 않는 sparse subnetwork 를 찾는 데에 있다.
 
 이를 위해 논문은 다음과 같은 sharpness-aware sparsity-constrained optimization 문제를 제안한다.
 
@@ -23,19 +23,19 @@ $$
 
 여기서 바깥 minimization은 희소한 해를 찾는 과정이고, 안쪽 maximization은 현재 해 주변의 작은 perturbation 중 가장 손실을 크게 만드는 방향을 고려함으로써 flat minima를 유도한다. 이후 이 문제를 augmented Lagrangian과 ADMM 관점으로 풀어내며, 연속적으로 학습되는 변수 $x$와 정확히 희소성을 담당하는 변수 $z$를 분리하여 최적화한다. 그 결과로 제안된 방법이 SAFE이며, projection 자체를 일반화하여 magnitude 외의 saliency를 흡수하도록 확장한 버전이 SAFE+ 이다.
 
-실험 결과는 SAFE가 실제로 더 sparse하고 더 flat한 해로 수렴하며, 이미지 분류와 LLM pruning 모두에서 강한 성능을 보인다는 점을 보여준다. 특히 label noise, common corruption, adversarial perturbation 환경에서도 성능 저하가 덜해, 단순한 compression 기법을 넘어 robust sparse optimization framework 로 이해할 수 있는 여지를 제공한다.
+실험 결과는 SAFE가 실제로 더 sparse하고 더 flat한 해로 수렴하며, 이미지 분류와 LLM pruning 모두에서 강한 성능을 보인다는 점을 보여준다. 특히 label noise, common corruption, adversarial perturbation 환경에서도 성능 저하가 덜해, 단순한 compression 기법을 넘어 robust sparse optimization framework로 이해를 확장시키고자 한다.
 
 ---
 
 ### 1. Introduction
 
-서론의 출발점은 현대 딥러닝 모델의 과도한 계산량과 메모리 비용이다. 대규모 데이터와 초과매개변수화된 네트워크 덕분에 모델의 표현력은 크게 증가했지만, 그만큼 실제 배포와 추론 단계에서는 비용 문제가 심각해졌다. 이러한 배경에서 pruning, quantization, distillation 같은 model compression 기법이 활발히 연구되어 왔고, 그중 pruning은 중복된 파라미터를 제거하여 효율성을 높이는 가장 직접적인 방법 으로 자리 잡았다.
+현대 딥러닝 모델은 대규모 데이터와 초과매개변수화된 네트워크 덕분에 모델의 표현력은 크게 증가했지만, 그만큼 실제 배포와 추론 단계에서의 과도한 계산량과 메모리 비용으로 인한 문제가 심각해졌다. 이러한 배경에서 pruning, quantization, distillation 같은 model compression 기법이 활발히 연구되어 왔고, 그중 pruning은 중복된 파라미터를 제거하여 효율성을 높이는 가장 직접적인 방법으로 자리 잡았다.
 
-하지만 pruning의 가장 근본적인 한계는, 높은 sparsity로 갈수록 성능 저하가 거의 필연처럼 나타난다는 점이다. 기존 연구들은 중요도가 낮은 가중치를 제거하거나, pruning 이후 retraining으로 성능을 복구하는 방향에 집중해 왔다. 이 논문은 그보다 한 단계 더 근본적인 질문을 던진다. '왜 sparse model은 성능이 쉽게 무너지는가?' 이 원인을 단순히 parameter count 감소로만 설명하지 않고, sparse solution이 놓이는 손실 지형의 기하학적 성질에서 찾고자 한다.
+하지만 pruning의 가장 근본적인 한계는 높은 sparsity로 갈수록 성능 저하가 필연적이다. 기존 연구들은 중요도가 낮은 가중치를 heuristic하게 제거하거나, pruning 이후 retraining으로 성능을 복구하는 방향에 집중해 왔다. 이보다 더 근본적으로 접근해보자면, '왜 sparse model은 성능이 쉽게 무너지는가?'에 대한 논의를 단순히 parameter count 감소로만 설명하지 않고, sparse solution이 놓이는 손실 지형의 기하학적 성질에서 찾고자 하는 것이 논문의 논의거리이다.
 
 이 문제의식은 flat minima 연구와 바로 연결된다. 잘 일반화되는 해는 sharp한 valley보다 넓고 완만한 valley에 놓이는 경향이 있으며, 이를 명시적으로 유도하는 대표적 방법이 SAM(Sharpness-Aware Minimization)이다. SAM은 현재 파라미터 한 점의 손실만 줄이는 것이 아니라, 그 주변 작은 neighborhood 전체에서 손실이 낮은 해를 찾도록 학습을 유도한다. 이에 대하여 pruning도 같은 관점으로 재해석할 수 있다고 본다. 즉, pruning이 잘 되려면 단순히 sparse한 해가 아니라 sparse하면서도 flat한 해가 필요하다는 것이다.
 
-기존의 SAM-inspired pruning 연구들은 SAM으로 학습한 후 pruning이 잘 되길 기대하거나, compression에 덜 민감한 해를 찾는 방향에 머무는 경우가 많았다. 반면 이 논문은 pruning 자체를 sharpness-aware sparsity-constrained optimization 문제로 세우고, 이를 augmented Lagrangian 기반으로 명시적으로 푼다. 따라서 SAFE는 단순한 heuristic이 아니라, sparsity와 flatness를 하나의 목적 아래 공동으로 최적화하는 구조적 방법 이라는 점에서 의미가 있다.
+기존의 SAM-inspired pruning 연구들은 SAM으로 학습한 후 pruning이 잘 되길 기대하거나, compression에 덜 민감한 해를 찾는 방향에 머무는 경우가 많았다. 반면 이 논문은 pruning 자체를 sharpness-aware sparsity-constrained optimization 문제로 세우고, 이를 augmented Lagrangian 기반으로 명시적으로 푼다. 따라서 SAFE는 단순한 heuristic이 아니라, sparsity와 flatness를 하나의 목적 아래 공동으로 최적화하는 구조적 방법으로 접근하는 데에 의미가 있다.
 
 ---
 
