@@ -18,7 +18,7 @@
 이를 위해 논문은 다음과 같은 sharpness-aware sparsity-constrained optimization 문제를 제안한다.
 
 $$
-\min_{\|x\|_0 \le d} \max_{\|\epsilon\|_2 \le \rho} f(x+\epsilon)
+\min_{\lVert x\rVert_0 \le d} \max_{\lVert \epsilon\rVert_2 \le \rho} f(x+\epsilon)
 $$
 
 여기서 바깥 minimization은 희소한 해를 찾는 과정이고, 안쪽 maximization은 현재 해 주변의 작은 perturbation 중 가장 손실을 크게 만드는 방향을 고려함으로써 flat minima를 유도한다. 이후 이 문제를 augmented Lagrangian과 ADMM 관점으로 풀어내며, 연속적으로 학습되는 변수 $x$와 정확히 희소성을 담당하는 변수 $z$를 분리하여 최적화한다. 그 결과로 제안된 방법이 SAFE이며, projection 자체를 일반화하여 magnitude 외의 saliency를 흡수하도록 확장한 버전이 SAFE+ 이다.
@@ -50,10 +50,10 @@ SAFE가 어떤 문제의식과 수학적 수식 접근에 대한 아이디어를
 가장 기본적인 sparse optimization 문제는 다음과 같이 쓸 수 있다.
 
 $$
-\min_{\||x\||_0 \le d} f(x)
+\min_{\lVert x\rVert_0 \le d} f(x)
 $$
 
-($f(x)$는 최소화하려는 목적함수, $\|x\|_0$는 0이 아닌 원소의 개수, $d$는 유지하려는 파라미터 수)
+($f(x)$는 최소화하려는 목적함수, $\lVert x\rVert_0$는 0이 아닌 원소의 개수, $d$는 유지하려는 파라미터 수)
 목표는 L-0 normㅔ 따라 non-zero 원소가 $d$개 이하인 해들 중 손실이 가장 낮은 해를 찾는 것이다. 문제는 $\ell_0$ 제약이 이산적이고 조합론적이어서, 정확한 최적해를 찾으려면 사실상 가능한 모든 mask 조합을 탐색해야 한다는 데 있다.
 
 이 어려움 때문에 고전적으로는 여러 우회 전략이 사용되었다. LASSO는 $\ell_0$ 제약을 $\ell_1$ regularization으로 완화했고, FISTA나 iterative hard thresholding은 proximal 혹은 thresholding 기반으로 sparse solution을 효율적으로 찾으려 했다. 신경망 분야에서는 OBD와 OBS처럼 2차 정보를 활용해 특정 파라미터를 제거했을 때 손실 증가를 근사하는 방법도 등장했다.
@@ -71,7 +71,7 @@ flat minima란, 파라미터를 조금 움직여도 손실이 급격히 커지�
 이러한 연구에서 나오게 된 대표적 방법이 SAM이다.  
 
 $$
-\min_x \max_{\||\epsilon\||_2 \le \rho} f(x+\epsilon)
+\min_x \max_{\lVert \epsilon\rVert_2 \le \rho} f(x+\epsilon)
 $$
 
 수식의 의미는 현재 점 $x$ 하나의 손실만 줄이는 것이 아니라, 반경 $\rho$ 안에 있는 perturbation 전체를 고려했을 때도 손실이 낮은 해를 찾겠다는 것이다. 만약 어떤 해가 sharp하다면, 아주 작은 $\epsilon$만으로도 손실이 크게 증가하므로 inner maximization 값이 커지고, outer minimization은 그러한 해를 피하게 된다. 결과적으로 SAM은 자연스럽게 flat minima를 선호한다.
@@ -79,7 +79,7 @@ $$
 1차 Taylor approximation을 쓰면 inner maximization의 해는 gradient 방향으로 근사된다.
 
 $$
-\epsilon^\star(x) \approx \rho \frac{\nabla f(x)}{\|\nabla f(x)\|_2}
+\epsilon^\star(x) \approx \rho \frac{\nabla f(x)}{\lVert \nabla f(x)\rVert_2}
 $$
 
 따라서 실제 업데이트는 현재 파라미터에서 gradient 방향으로 약간 이동한 지점의 gradient를 계산하여 수행된다. 이 방식은 다양한 비전과 언어 과제에서 일반화와 robustness 향상에 효과적이라고 알려져 있다.
@@ -99,7 +99,7 @@ $$
 SAFE의 출발점은 다음 문제이다.
 
 $$
-\min_{\|x\|_0 \le d} \max_{\|\epsilon\|_2 \le \rho} f(x+\epsilon)
+\min_{\lVert x\rVert_0 \le d} \max_{\lVert \epsilon\rVert_2 \le \rho} f(x+\epsilon)
 $$
 
 ($d$는 남길 파라미터 수이며, $\rho$는 flatness를 얼마나 강하게 요구할지 결정하는 반경)
@@ -117,14 +117,15 @@ $\rho$가 커질수록 더 넓은 neighborhood에서 안정적인 해가 선호�
 먼저 변수 분할을 도입하여, objective minimization을 담당하는 변수 $x$와 sparse constraint를 직접 만족하는 변수 $z$를 분리한다.
 
 $$
-\min_{x,z} \max_{\|\epsilon\|_2 \le \rho} f(x+\epsilon) + I_{\|\cdot\|_0 \le d}(z)
+\min_{x,z} \max_{\lVert \epsilon\rVert_2 \le \rho} f(x+\epsilon)
++ I_{\lVert \cdot \rVert_0 \le d}(z)
 \quad \text{s.t. } x=z
 $$
 
 $$
-I_{\|\cdot\|_0 \le d}(z)=
+I_{\lVert \cdot \rVert_0 \le d}(z)=
 \begin{cases}
-0 & \text{if } \|z\|_0 \le d \\
+0 & \text{if } \lVert z\rVert_0 \le d \\
 \infty & \text{otherwise}
 \end{cases}
 $$
@@ -134,15 +135,12 @@ $$
 이후 penalty term을 더한 augmented Lagrangian을 구성하면, scaled dual variable $u$를 사용하여 다음과 같은 반복 구조를 얻는다.
 
 $$
-x^{k+1}=
-\arg\min_x \max_{\|\epsilon\|_2 \le \rho} f(x+\epsilon)
-+
-\frac{\lambda}{2}\|x-z^k+u^k\|_2^2
+x^{k+1}= \arg\min_x \max_{\lVert \epsilon\rVert_2 \le \rho} f(x+\epsilon)
++ \frac{\lambda}{2}\lVert x-z^k+u^k\rVert_2^2
 $$
 
 $$
-z^{k+1}=
-\operatorname{proj}_{\|\cdot\|_0 \le d}(x^{k+1}+u^k)
+z^{k+1}= \operatorname{proj}_{\lVert \cdot \rVert_0 \le d}(x^{k+1}+u^k)
 $$
 
 $$
@@ -158,34 +156,31 @@ $x$-step은 손실과 flatness를 고려해 연속적으로 최적화되는 단�
 먼저 inner maximization은 SAM과 같은 방식으로 1차 근사를 이용해 푼다.
 
 $$
-\epsilon^\star(x)
-\approx
-\arg\max_{\|\epsilon\|_2 \le \rho} \left( f(x)+\epsilon^\top \nabla f(x) \right)=
-\rho \frac{\nabla f(x)}{\|\nabla f(x)\|_2}
+\epsilon^\star(x) \approx
+\arg\max_{\lVert \epsilon\rVert_2 \le \rho}
+\left( f(x)+\epsilon^\top \nabla f(x) \right)
+=\rho \frac{\nabla f(x)}{\lVert \nabla f(x)\rVert_2}
 $$
 
 이를 목적함수에 대입하면 $x$-step은 다음 문제로 바뀐다.
 
 $$
-x^{k+1}=
-\arg\min_x
-f(x+\epsilon^\star(x))
-+
-\frac{\lambda}{2}\|x-z^k+u^k\|_2^2
+x^{k+1}= \arg\min_x f(x+\epsilon^\star(x))
++ \frac{\lambda}{2}\lVert x-z^k+u^k\rVert_2^2
 $$
 
 이제 gradient를 계산하면, SAM과 마찬가지로 $\nabla \epsilon^\star(x)$에 의한 고차항을 무시하는 근사 아래 다음 식을 얻는다.
 
 $$
-\nabla_x
-\left(
+\nabla_x \left(
 f(x+\epsilon^\star(x))
-+
-\frac{\lambda}{2}\|x-z^k+u^k\|_2^2
-\right)=
-\nabla f\!\left(x+\rho\frac{\nabla f(x)}{\|\nabla f(x)\|_2}\right)
-+
-\lambda(x-z^k+u^k)
++ \frac{\lambda}{2}\lVert x-z^k+u^k\rVert_2^2
+\right)
+=
+\nabla f\!\left(
+x+\rho\frac{\nabla f(x)}{\lVert \nabla f(x)\rVert_2}
+\right)
++ \lambda(x-z^k+u^k)
 $$
 
 따라서 실제 업데이트는 다음과 같다.
@@ -193,15 +188,13 @@ $$
 $$
 x_k^{(t+1)}=
 x_k^{(t)}
--\eta^{(t)}
-\left(
+-\eta^{(t)} \left(
 \nabla f\!\left(
 x_k^{(t)}
-+
-\rho \frac{\nabla f(x_k^{(t)})}{\|\nabla f(x_k^{(t)})\|_2}
++ \rho \frac{\nabla f(x_k^{(t)})}
+{\lVert \nabla f(x_k^{(t)})\rVert_2}
 \right)
-+
-\lambda(x_k^{(t)}-z_k+u_k)
++ \lambda(x_k^{(t)}-z_k+u_k)
 \right)
 $$
 
@@ -216,12 +209,10 @@ $$
 이를 위해 SAFE+는 projection 자체의 거리 개념을 일반화한다. 양의 정부호 대각행렬 $P$를 도입하여 다음과 같이 정의한다.
 
 $$
-\operatorname{proj}_{\|\cdot\|_0 \le d}^{P}(v)
-=
-\arg\min_{\|z\|_0 \le d}
-\frac{1}{2}\|z-v\|_P^2
-=
-\arg\min_{\|z\|_0 \le d}
+\operatorname{proj}_{\lVert \cdot \rVert_0 \le d}^{P}(v)
+=\arg\min_{\lVert z\rVert_0 \le d}
+\frac{1}{2}\lVert z-v\rVert_P^2
+=\arg\min_{\lVert z\rVert_0 \le d}
 \frac{1}{2}(z-v)^\top P(z-v)
 $$
 
