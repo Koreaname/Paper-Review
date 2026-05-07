@@ -1,4 +1,4 @@
-## SAFE: Sparse 및 Flat Minima 탐색을 통한 가지치기 성능 향상  
+## SAFE: Sparse 및 Flat Minima 탐색을 통한 Pruning 성능 향상  
   
 ### 0. 논문 정보 (Reference)  
 * **Title:** SAFE: Finding Sparse and Flat Minima to Improve Pruning  
@@ -41,7 +41,7 @@ $$
 
 ### 2. Background
 
-이 장은 SAFE가 어떤 문제의식과 수학적 재료 위에서 등장하는지를 정리한다. 한 축은 희소성 제약 최적화 이고, 다른 한 축은 flat minima를 선호하는 robust optimization 이다. 이후 Method 장에서 SAFE가 제안될 때, 바로 이 두 축이 하나의 알고리즘으로 결합된다.
+SAFE가 어떤 문제의식과 수학적 수식 접근에 대한 아이디어를 논하고자 한다. 한 축은 희소성 제약 최적화 이고, 다른 한 축은 flat minima를 선호하는 robust optimization 이다. 이후 Method 장에서 SAFE가 제안될 때, 이 두 축이 하나의 알고리즘으로 결합된다.
 
 ---
 
@@ -50,27 +50,28 @@ $$
 가장 기본적인 sparse optimization 문제는 다음과 같이 쓸 수 있다.
 
 $$
-\min_{\|x\|_0 \le d} f(x)
+\min_{\||x\||_0 \le d} f(x)
 $$
 
-여기서 $f(x)$는 최소화하려는 목적함수, $\|x\|_0$는 0이 아닌 원소의 개수, $d$는 유지하려는 파라미터 수이다. 즉, 목표는 비영 원소가 $d$개 이하인 해들 중 손실이 가장 낮은 해를 찾는 것이다. 문제는 $\ell_0$ 제약이 이산적이고 조합론적이어서, 정확한 최적해를 찾으려면 사실상 가능한 모든 mask 조합을 탐색해야 한다는 데 있다.
+($f(x)$는 최소화하려는 목적함수, $\|x\|_0$는 0이 아닌 원소의 개수, $d$는 유지하려는 파라미터 수)
+목표는 L-0 normㅔ 따라 non-zero 원소가 $d$개 이하인 해들 중 손실이 가장 낮은 해를 찾는 것이다. 문제는 $\ell_0$ 제약이 이산적이고 조합론적이어서, 정확한 최적해를 찾으려면 사실상 가능한 모든 mask 조합을 탐색해야 한다는 데 있다.
 
 이 어려움 때문에 고전적으로는 여러 우회 전략이 사용되었다. LASSO는 $\ell_0$ 제약을 $\ell_1$ regularization으로 완화했고, FISTA나 iterative hard thresholding은 proximal 혹은 thresholding 기반으로 sparse solution을 효율적으로 찾으려 했다. 신경망 분야에서는 OBD와 OBS처럼 2차 정보를 활용해 특정 파라미터를 제거했을 때 손실 증가를 근사하는 방법도 등장했다.
 
-딥러닝에서 sparsity는 적용 시점에 따라 크게 세 종류로 나뉜다. 학습 전 pruning 은 sparse training 효율을 높이는 데 유리하고, 학습 중 pruning 은 모델이 훈련되는 과정에서 원하는 sparse 구조로 유도할 수 있어 일반적으로 가장 좋은 성능을 내는 편이며, 학습 후 pruning 은 이미 학습된 대형 모델을 낮은 비용으로 압축하는 데 적합하다. 특히 LLM에서는 전체 재학습이 거의 불가능하므로, block-wise reconstruction error minimization 같은 post-training pruning이 널리 쓰인다.
+딥러닝에서 sparsity는 적용 시점에 따라 크게 세 종류로 나뉜다. 학습 전 pruning은 sparse training 효율을 높이는 데 유리하고, 학습 중 pruning은 모델이 훈련되는 과정에서 원하는 sparse 구조로 유도할 수 있어 일반적으로 가장 좋은 성능을 내는 편이며, 학습 후 pruning은 이미 학습된 대형 모델을 낮은 비용으로 압축하는 데 적합하다. 특히 LLM에서는 전체 재학습이 거의 불가능하므로, block-wise reconstruction error minimization 같은 post-training pruning이 널리 쓰인다.
 
-그럼에도 높은 sparsity 내 기존 dense model의 성능을 유지하는 일은 여전히 어렵다. 결국 많은 방법이 다양한 saliency score나 heuristic에 의존하게 되는데, 이 논문에선 희소성 자체를 제약 최적화 문제에 대해 그 안에 flatness까지 포함하는 원리적 접근을 시도한다.
+그럼에도 높은 sparsity 내 기존 dense model의 성능을 유지하는 일은 여전히 어렵다. 결국 많은 방법이 다양한 saliency score나 heuristic에 의존하게 되는데, 이 논문에선 희소성 자체를 제약 최적화 문제에 대해 그 안에 flatness까지 포함하는 접근을 시도한다.
 
 ---
 
 #### 2.2. Flat Minima
 
-딥러닝 최적화 연구는 잘 일반화되는 해가 종종 flat minima에 놓인다는 경험적 사실을 반복적으로 보여 왔다. flat minima란, 파라미터를 조금 움직여도 손실이 급격히 커지지 않는 넓고 완만한 영역을 의미한다. 반대로 sharp minima는 아주 작은 perturbation에도 손실이 크게 증가하는 해이다. 이 관점은 mini-batch training의 일반화 성질, large-batch 학습의 일반화 gap, 그리고 모델 robustness와도 깊게 연결되어 있다.
+flat minima란, 파라미터를 조금 움직여도 손실이 급격히 커지지 않는 넓고 완만한 영역을 의미한다. 딥러닝 최적화 연구는 잘 일반화되는 해가 종종 flat minima에 놓인다는 경험적 사실을 반복적으로 보여 왔다. 반대로 sharp minima는 아주 작은 perturbation에도 손실이 크게 증가하는 해이다. 이 관점은 mini-batch training의 일반화 성질, large-batch 학습의 일반화 gap, 그리고 모델 robustness와도 깊게 연결되어 있다.
 
 이러한 연구에서 나오게 된 대표적 방법이 SAM이다.  
 
 $$
-\min_x \max_{\|\epsilon\|_2 \le \rho} f(x+\epsilon)
+\min_x \max_{\||\epsilon\||_2 \le \rho} f(x+\epsilon)
 $$
 
 수식의 의미는 현재 점 $x$ 하나의 손실만 줄이는 것이 아니라, 반경 $\rho$ 안에 있는 perturbation 전체를 고려했을 때도 손실이 낮은 해를 찾겠다는 것이다. 만약 어떤 해가 sharp하다면, 아주 작은 $\epsilon$만으로도 손실이 크게 증가하므로 inner maximization 값이 커지고, outer minimization은 그러한 해를 피하게 된다. 결과적으로 SAM은 자연스럽게 flat minima를 선호한다.
@@ -83,13 +84,13 @@ $$
 
 따라서 실제 업데이트는 현재 파라미터에서 gradient 방향으로 약간 이동한 지점의 gradient를 계산하여 수행된다. 이 방식은 다양한 비전과 언어 과제에서 일반화와 robustness 향상에 효과적이라고 알려져 있다.
 
-이 논문이 중요한 이유는 바로 이 sharpness-aware 관점을 pruning에 직접 접목했다는 데 있다. 즉, sparse model의 성능 저하를 줄이기 위해서는 단순히 어느 가중치를 남길지보다, 남겨진 sparse model이 어떤 손실 지형 위에 놓이는지가 중요하다고 본다. Method 장의 SAFE는 바로 이 문제의식을 수식화한 결과물이다.
+이 논문이 중요한 이유는 바로 이 sharpness-aware 관점을 pruning에 직접 접목했다는 데 있다. 즉, sparse model의 성능 저하를 줄이기 위해서는 단순히 어느 가중치를 남길지보다, 남겨진 sparse model이 어떤 손실 지형 위에 놓이는지가 중요하다고 본다.
 
 ---
 
 ### 3. Method
 
-저자들은 앞선 작업으로부터 pruning을 크기가 작은 가중치를 제거하는 과정이 아니라, 희소성과 평탄성을 동시에 만족하는 sparse solution을 찾는 constrained robust optimization 문제로 재정의한다. 그리고 그 문제를 실제로 풀기 위해 augmented Lagrangian과 ADMM 구조를 사용한다.
+앞서 다룬 방법론적인 논의를 수식으로 검증해볼 수 있다. 앞선 작업으로부터 pruning을 크기가 작은 가중치를 제거하는 과정이 아니라, 희소성과 평탄성을 동시에 만족하는 sparse solution을 찾는 constrained robust optimization 문제로 재정의한다. 그리고 그 문제를 실제로 풀기 위해 augmented Lagrangian과 ADMM 구조를 사용한다.
 
 ---
 
@@ -101,15 +102,17 @@ $$
 \min_{\|x\|_0 \le d} \max_{\|\epsilon\|_2 \le \rho} f(x+\epsilon)
 $$
 
-바깥 minimization은 sparse constraint를 만족하는 파라미터를 찾는 과정이고, 안쪽 maximization은 그 주변의 가장 불리한 perturbation까지 고려하는 과정이다. 따라서 목적은 단순히 손실이 낮은 sparse model이 아니라, 작은 교란에도 손실이 급격히 증가하지 않는 sparse and flat solution 을 찾는 것이다.
+($d$는 남길 파라미터 수이며, $\rho$는 flatness를 얼마나 강하게 요구할지 결정하는 반경)
 
-여기서 $d$는 남길 파라미터 수이며, $\rho$는 flatness를 얼마나 강하게 요구할지 결정하는 반경이다. $\rho$가 커질수록 더 넓은 neighborhood에서 안정적인 해가 선호된다. 이 formulation은 pruning의 성능 저하를 단지 capacity 감소의 부산물이 아니라, geometry-aware optimization의 실패로 해석할 수 있게 만든다.
+바깥 minimization은 sparse constraint를 만족하는 파라미터를 찾는 과정이고, 안쪽 maximization은 그 주변의 가장 불리한 perturbation까지 고려하는 과정이다. 따라서 목적은 단순히 손실이 낮은 sparse model이 아니라, 작은 교란에도 손실이 급격히 증가하지 않는 sparse and flat solution을 찾는 것이다.
+
+$\rho$가 커질수록 더 넓은 neighborhood에서 안정적인 해가 선호된다. 이 formulation은 pruning의 성능 저하를 단지 capacity 감소의 부산물이 아니라, geometry-aware optimization의 실패로 해석할 수 있게 만든다.
 
 ---
 
 #### 3.2. Augmented Lagrangian Based Approach
 
-하지만 위 문제는 직접적으로 푸는 것은 불가능하다. $\ell_0$ 제약은 이산적이고, 신경망 손실은 강한 비선형성을 가지므로 순수한 Lagrangian duality나 projected gradient descent는 각각 한계를 가진다. Lagrangian만으로는 $\ell_0$ 제약이 다루기 어렵고, 단순 projection은 비선형 딥넷에서 학습을 지나치게 불안정하게 만들 수 있다. 이러한 단점을 해결하고 장점을 결합하기 위해 augmented Lagrangian 을 사용한다.
+하지만 위 문제는 개별적인 방식으로 직접 푸는 것은 불가능하다. $\ell_0$ 제약은 이산적이고, 신경망 손실은 강한 비선형성을 가지므로 순수한 Lagrangian duality나 projected gradient descent는 각각 한계를 가진다. Lagrangian만으로는 $\ell_0$ 제약이 다루기 어렵고, 단순 projection은 비선형 딥넷에서 학습을 지나치게 불안정하게 만들 수 있다. 이러한 단점을 해결하고 장점을 결합하기 위해 augmented Lagrangian 을 사용한다.
 
 먼저 변수 분할을 도입하여, objective minimization을 담당하는 변수 $x$와 sparse constraint를 직접 만족하는 변수 $z$를 분리한다.
 
@@ -131,16 +134,14 @@ $$
 이후 penalty term을 더한 augmented Lagrangian을 구성하면, scaled dual variable $u$를 사용하여 다음과 같은 반복 구조를 얻는다.
 
 $$
-x^{k+1}
-=
+x^{k+1}=
 \arg\min_x \max_{\|\epsilon\|_2 \le \rho} f(x+\epsilon)
 +
 \frac{\lambda}{2}\|x-z^k+u^k\|_2^2
 $$
 
 $$
-z^{k+1}
-=
+z^{k+1}=
 \operatorname{proj}_{\|\cdot\|_0 \le d}(x^{k+1}+u^k)
 $$
 
@@ -159,16 +160,14 @@ $x$-step은 손실과 flatness를 고려해 연속적으로 최적화되는 단�
 $$
 \epsilon^\star(x)
 \approx
-\arg\max_{\|\epsilon\|_2 \le \rho} \left( f(x)+\epsilon^\top \nabla f(x) \right)
-=
+\arg\max_{\|\epsilon\|_2 \le \rho} \left( f(x)+\epsilon^\top \nabla f(x) \right)=
 \rho \frac{\nabla f(x)}{\|\nabla f(x)\|_2}
 $$
 
 이를 목적함수에 대입하면 $x$-step은 다음 문제로 바뀐다.
 
 $$
-x^{k+1}
-=
+x^{k+1}=
 \arg\min_x
 f(x+\epsilon^\star(x))
 +
@@ -183,8 +182,7 @@ $$
 f(x+\epsilon^\star(x))
 +
 \frac{\lambda}{2}\|x-z^k+u^k\|_2^2
-\right)
-=
+\right)=
 \nabla f\!\left(x+\rho\frac{\nabla f(x)}{\|\nabla f(x)\|_2}\right)
 +
 \lambda(x-z^k+u^k)
@@ -193,11 +191,9 @@ $$
 따라서 실제 업데이트는 다음과 같다.
 
 $$
-x_k^{(t+1)}
-=
+x_k^{(t+1)}=
 x_k^{(t)}
--
-\eta^{(t)}
+-\eta^{(t)}
 \left(
 \nabla f\!\left(
 x_k^{(t)}
@@ -233,16 +229,19 @@ $$
 
 이 일반화는 여러 기존 pruning 기준을 하나의 틀 안에 넣는다.
 
-##### Case 1. $P=I$
+##### IF $P=I$,
 
 기본 SAFE와 동일하며, 단순 magnitude pruning과 대응된다.
-##### Case 2. $P=\operatorname{diag}(\nabla^2 f(x))$
+
+##### IF $P=\operatorname{diag}(\nabla^2 f(x))$,
 
 OBD류의 2차 pruning과 연결된다.
-##### Case 3. $P=\operatorname{diag}(\nabla f(x)\nabla f(x)^\top)$
+
+##### IF $P=\operatorname{diag}(\nabla f(x)\nabla f(x)^\top)$,
 
 SNIP류의 1차 민감도 기반 pruning과 연결된다.
-##### Case 4. Wanda projection
+
+##### IF Wanda projection,
 
 LLM pruning의 Wanda는 특정 layer activation $A$에 대해 $P=\operatorname{diag}(A^\top A)$ 로 해석할 수 있다.
 
