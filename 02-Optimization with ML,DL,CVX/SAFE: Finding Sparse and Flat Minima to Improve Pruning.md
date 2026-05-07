@@ -287,13 +287,13 @@ SAFE의 $x$-update는 정확한 $\nabla \hat{L}(x)$ 대신, perturbation이 반�
 
 ### 4. Experiments
 
-실험 장의 목적은 세 가지이다. 첫째, SAFE가 실제로 sparse하고 flat한 해를 만드는지 확인한다. 둘째, 이미지 분류와 LLM pruning에서 성능 향상이 있는지 검증한다. 셋째, noisy data와 corruption 환경에서도 robust한지 살핀다. 이 구성은 Method 장의 주장과 정확히 대응된다.
+실험 장의 목적은 세 가지이다. 첫째, SAFE가 실제로 sparse하고 flat한 해를 만드는지 확인한다. 둘째, 이미지 분류와 LLM pruning에서 성능 향상이 있는지 검증한다. 셋째, noisy data와 corruption 환경에서도 robust한지 살핀다.
 
 ---
 
 #### 4.1. Convergence to Sparse and Flat Solutions
-
-가장 먼저 논문은 간단한 MLP와 MNIST를 이용해 SAFE가 실제로 어떤 해에 수렴하는지를 시각적으로 보여준다. Figure 1의 weight distribution을 보면, dense training은 가중치가 넓게 퍼져 있는 반면 SAFE는 0 근처에 강하게 집중되어 있어 sparse-friendly한 구조를 형성한다. 즉 SAFE는 학습 과정 자체가 자연스럽게 pruning 가능한 파라미터 구성을 만들도록 유도한다.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+가장 먼저 간단한 MLP와 MNIST를 이용해 SAFE가 실제로 어떤 해에 수렴하는지를 시각적으로 보여준다. Figure 1의 weight distribution을 보면, dense training은 가중치가 넓게 퍼져 있는 반면 SAFE는 0 근처에 강하게 집중되어 있어 sparse-friendly한 구조를 형성한다. 즉 SAFE는 학습 과정 자체가 자연스럽게 pruning 가능한 파라미터 구성을 만들도록 유도한다.
 
 더 중요한 것은 손실 지형의 차이이다. 논문은 ADMM과 SAFE로 찾은 해의 loss landscape를 시각화하고, 최대 Hessian 고유값을 sharpness 지표로 비교한다. 결과적으로 SAFE의 sharpness는 0.09, ADMM은 0.2로 보고되며, SAFE가 더 넓고 완만한 valley에 놓인다는 점이 분명히 드러난다. 이 결과는 SAFE가 단지 sparsity만 강제하는 것이 아니라, flatness까지 함께 유도하는 알고리즘 이라는 논문의 핵심 주장을 직접적으로 뒷받침한다.
 
