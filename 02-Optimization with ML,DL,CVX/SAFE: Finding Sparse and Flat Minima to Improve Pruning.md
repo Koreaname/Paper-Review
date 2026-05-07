@@ -204,10 +204,12 @@ x_k^{(t)}
 -\eta^{(t)} \left(
 \nabla f\!\left(
 x_k^{(t)}
-+ \rho \frac{\nabla f(x_k^{(t)})}
++
+\rho \frac{\nabla f(x_k^{(t)})}
 {\lVert \nabla f(x_k^{(t)})\rVert_2}
 \right)
-+ \lambda(x_k^{(t)}-z_k+u_k)
++
+\lambda(x_k^{(t)}-z_k+u_k)
 \right)
 $$
 
@@ -222,11 +224,13 @@ $$
 이를 위해 SAFE+는 projection 자체의 거리 개념을 일반화한다. 양의 정부호 대각행렬 $P$를 도입하여 다음과 같이 정의한다.
 
 $$
-\operatorname{proj}_{\lVert \cdot \rVert_0 \le d}^{P}(v)
-=\arg\min_{\lVert z\rVert_0 \le d}
-\frac{1}{2}\lVert z-v\rVert_P^2
-=\arg\min_{\lVert z\rVert_0 \le d}
-\frac{1}{2}(z-v)^\top P(z-v)
+\mathrm{proj}_{\lVert \cdot \rVert_0 \le d}^{P}(v)=
+\arg\min_{\lVert z\rVert_0 \le d}
+\frac{1}{2}
+\lVert z-v\rVert_P^2
+= \arg\min_{\lVert z\rVert_0 \le d}
+\frac{1}{2}
+(z-v)^\top P(z-v)
 $$
 
 좌표별로 보면, 어떤 좌표를 0으로 보냈을 때의 비용은 대략 $\frac{1}{2}P_{ii}v_i^2$ 이다. 따라서 projection은 결국 $P_{ii}v_i^2$ 가 큰 좌표를 남기는 효과를 가지며, 이는 $\sqrt{P_{ii}}|v_i|$ 형태의 saliency score를 사용한 pruning으로 해석할 수 있다.
@@ -237,17 +241,17 @@ $$
 
 기본 SAFE와 동일하며, 단순 magnitude pruning과 대응된다.
 
-##### IF $P=\operatorname{diag}(\nabla^2 f(x))$,
+##### IF $P=\mathrm{diag}(\nabla^2 f(x))$,
 
 OBD류의 2차 pruning과 연결된다.
 
-##### IF $P=\operatorname{diag}(\nabla f(x)\nabla f(x)^\top)$,
+##### IF $P=\mathrm{diag}(\nabla f(x)\nabla f(x)^\top)$,
 
 SNIP류의 1차 민감도 기반 pruning과 연결된다.
 
 ##### IF Wanda projection,
 
-LLM pruning의 Wanda는 특정 layer activation $A$에 대해 $P=\operatorname{diag}(A^\top A)$ 로 해석할 수 있다.
+LLM pruning의 Wanda는 특정 layer activation $A$에 대해 $P=\mathrm{diag}(A^\top A)$ 로 해석할 수 있다.
 
 즉 SAFE+의 의미는 새로운 pruning score 하나를 제안했다 것이 아닌, projection metric을 바꾸는 방식으로 다양한 saliency를 제약 최적화 내부에 통합했다는데에 있다. 이 점이 SAFE+를 단순한 heuristic 확장이 아니라, 보다 일반적인 sparse optimization framework로 만들어 준다.
 
