@@ -258,7 +258,7 @@ LLM pruning의 Wanda는 특정 layer activation $A$에 대해 $P=\mathrm{diag}(A
 ---
 
 #### 3.5. Final Algorithm: SAFE and SAFE+
-
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 최종 알고리즘은 크게 세 흐름으로 요약된다. 첫째, $x$는 sharpness-aware gradient를 통해 flat한 방향으로 학습된다. 둘째, 일정 간격 $K$마다 현재의 $x+u$를 sparse set에 projection하여 $z$를 갱신한다. 셋째, dual variable $u$를 업데이트하여 $x$와 $z$의 차이가 장기적으로 줄어들게 만든다.
 
 실제로 논문 속 알고리즘은 다음과 같은 직관을 따른다. SAFE는 학습 도중 항상 현재 파라미터가 가장 가까운 sparse point에서 얼마나 떨어져 있는지를 관찰하고, 그 sparse point를 $z$에 기록한다. 그런 다음 $x$를 학습할 때는 단순히 training loss만 줄이는 것이 아니라, flat minima를 찾는 방향으로 움직이면서 동시에 sparse proxy 쪽으로도 조금씩 끌려가게 만든다. 이 덕분에 마지막에 갑자기 hard pruning을 가하는 방법보다 손실 폭증이 덜하다.
@@ -277,7 +277,7 @@ $$
 \hat{L}(x)=f(x)+\frac{\lambda}{2}\lVert x-z+u\rVert_2^2
 $$
 
-(Appendix 참고)$f$가 $\beta$-smooth이고 $\mu$-weakly convex이면 $\hat{L}(x)$는 $(\beta+\lambda)$-smooth하고, $\lambda>\mu$일 때 $(\lambda-\mu)$-strongly convex가 된다. 즉, penalty term은 단순히 제약 위반을 벌점화하는 역할만 하는 것이 아니라, $x$-subproblem의 기하를 더 안정적인 방향으로 바꿔 준다.
+(Appendix 참고) $f$가 $\beta$-smooth이고 $\mu$-weakly convex이면 $\hat{L}(x)$는 $(\beta+\lambda)$-smooth하고, $\lambda>\mu$일 때 $(\lambda-\mu)$-strongly convex가 된다. 즉, penalty term은 단순히 제약 위반을 벌점화하는 역할만 하는 것이 아니라, $x$-subproblem의 기하를 더 안정적인 방향으로 바꿔 준다.
 
 SAFE의 $x$-update는 정확한 $\nabla \hat{L}(x)$ 대신, perturbation이 반영된 sharpness-aware gradient를 사용한다, 이는 이 둘의 차이가 smoothness로 제어 가능하며, step size와 perturbation radius가 적절한 조건을 만족하면 결국 $\nabla \hat{L}(x^{(t)}) \to 0$임을 보인다. 다시 말해, $x$-update는 augmented Lagrangian에 대한 stationary point 쪽으로 수렴한다.
 
@@ -292,7 +292,6 @@ SAFE의 $x$-update는 정확한 $\nabla \hat{L}(x)$ 대신, perturbation이 반�
 ---
 
 #### 4.1. Convergence to Sparse and Flat Solutions
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 가장 먼저 간단한 MLP와 MNIST를 이용해 SAFE가 실제로 어떤 해에 수렴하는지를 시각적으로 보여준다. Figure 1의 weight distribution을 보면, dense training은 가중치가 넓게 퍼져 있는 반면 SAFE는 0 근처에 강하게 집중되어 있어 sparse-friendly한 구조를 형성한다. 즉 SAFE는 학습 과정 자체가 자연스럽게 pruning 가능한 파라미터 구성을 만들도록 유도한다.
 
 더 중요한 것은 손실 지형의 차이이다. 논문은 ADMM과 SAFE로 찾은 해의 loss landscape를 시각화하고, 최대 Hessian 고유값을 sharpness 지표로 비교한다. 결과적으로 SAFE의 sharpness는 0.09, ADMM은 0.2로 보고되며, SAFE가 더 넓고 완만한 valley에 놓인다는 점이 분명히 드러난다. 이 결과는 SAFE가 단지 sparsity만 강제하는 것이 아니라, flatness까지 함께 유도하는 알고리즘 이라는 논문의 핵심 주장을 직접적으로 뒷받침한다.
@@ -385,11 +384,11 @@ $$
 g^{(t)}
 =\nabla f\!\left(
 x^{(t)}
-+ \rho^{(t)}
-\frac{\nabla f(x^{(t)})}
-{\lVert \nabla f(x^{(t)})\rVert}
-\right)
-+ \lambda(x^{(t)}-z+u)
++
+\rho^{(t)} \frac{\nabla f(x^{(t)})}
+{\lVert \nabla f(x^{(t)})\rVert} \right)
++
+\lambda(x^{(t)}-z+u)
 $$
 
 로 두고, smoothness를 이용해
