@@ -258,12 +258,14 @@ LLM pruning의 Wanda는 특정 layer activation $A$에 대해 $P=\mathrm{diag}(A
 ---
 
 #### 3.5. Final Algorithm: SAFE and SAFE+
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-최종 알고리즘은 크게 세 흐름으로 요약된다. 첫째, $x$는 sharpness-aware gradient를 통해 flat한 방향으로 학습된다. 둘째, 일정 간격 $K$마다 현재의 $x+u$를 sparse set에 projection하여 $z$를 갱신한다. 셋째, dual variable $u$를 업데이트하여 $x$와 $z$의 차이가 장기적으로 줄어들게 만든다.
+최종 알고리즘은 크게 세 흐름으로 요약된다.
+1. $x$는 sharpness-aware gradient를 통해 flat한 방향으로 학습된다.
+2. 일정 간격 $K$마다 현재의 $x+u$를 sparse set에 projection하여 $z$를 갱신한다.
+3. dual variable $u$를 업데이트하여 $x$와 $z$의 차이가 장기적으로 줄어들게 만든다.
 
-실제로 논문 속 알고리즘은 다음과 같은 직관을 따른다. SAFE는 학습 도중 항상 현재 파라미터가 가장 가까운 sparse point에서 얼마나 떨어져 있는지를 관찰하고, 그 sparse point를 $z$에 기록한다. 그런 다음 $x$를 학습할 때는 단순히 training loss만 줄이는 것이 아니라, flat minima를 찾는 방향으로 움직이면서 동시에 sparse proxy 쪽으로도 조금씩 끌려가게 만든다. 이 덕분에 마지막에 갑자기 hard pruning을 가하는 방법보다 손실 폭증이 덜하다.
+실제로 논문 속 알고리즘은 다소 직관적으로 학습 도중 항상 현재 파라미터가 가장 가까운 sparse point에서 얼마나 떨어져 있는지를 관찰하고, 그 sparse point를 $z$에 기록한다. 그런 다음 $x$를 학습할 때는 단순히 training loss만 줄이는 것이 아니라, flat minima를 찾는 방향으로 움직이면서 동시에 sparse proxy 쪽으로도 조금씩 끌려가게 만든다. 이로 인해 마지막에 갑자기 hard pruning을 가하는 방법보다 손실 폭증이 덜하다.
 
-논문은 실제 비전 실험에서 penalty parameter $\lambda$를 0에서 목표값까지 cosine 형태로 증가시키는 스케줄링을 사용한다. 이는 초기 학습 단계에서는 표현 학습을 충분히 진행하고, 후반부로 갈수록 sparsity constraint를 강하게 반영하기 위한 설계이다. 이 선택은 Appendix의 ablation에서 실제로 성능 이점을 보인다.
+또한, 알고리즘 적용시 실제 실험에서 penalty parameter $\lambda$를 0에서 목표값까지 cosine 형태로 증가시키는 스케줄링을 사용한다. 이는 초기 학습 단계에서는 표현 학습을 충분히 진행하고, 후반부로 갈수록 sparsity constraint를 강하게 반영하기 위한 설계이다. 이 선택은 Appendix의 ablation에서 실제로 성능 이점에 관한 논의를 다룬 바 있다.
 
 ---
 
@@ -277,9 +279,9 @@ $$
 \hat{L}(x)=f(x)+\frac{\lambda}{2}\lVert x-z+u\rVert_2^2
 $$
 
-(Appendix 참고) $f$가 $\beta$-smooth이고 $\mu$-weakly convex이면 $\hat{L}(x)$는 $(\beta+\lambda)$-smooth하고, $\lambda>\mu$일 때 $(\lambda-\mu)$-strongly convex가 된다. 즉, penalty term은 단순히 제약 위반을 벌점화하는 역할만 하는 것이 아니라, $x$-subproblem의 기하를 더 안정적인 방향으로 바꿔 준다.
+(Appendix 참고) $f$가 $\beta$-smooth이고 $\mu$-weakly convex이면 $\hat{L}(x)$는 $(\beta+\lambda)$-smooth하고, $\lambda>\mu$일 때 $(\lambda-\mu)$-strongly convex가 된다. 즉, penalty term은 단순히 제약 위반을 벌점화하는 역할만 하는 것이 아닌 $x$-subproblem의 기하를 더 안정적인 방향으로 바꿔 준다.
 
-SAFE의 $x$-update는 정확한 $\nabla \hat{L}(x)$ 대신, perturbation이 반영된 sharpness-aware gradient를 사용한다, 이는 이 둘의 차이가 smoothness로 제어 가능하며, step size와 perturbation radius가 적절한 조건을 만족하면 결국 $\nabla \hat{L}(x^{(t)}) \to 0$임을 보인다. 다시 말해, $x$-update는 augmented Lagrangian에 대한 stationary point 쪽으로 수렴한다.
+SAFE의 $x$-update는 정확한 $\nabla \hat{L}(x)$ 대신, perturbation이 반영된 sharpness-aware gradient를 사용한다. 이는 이 둘의 차이가 smoothness로 제어 가능하며, step size와 perturbation radius가 적절한 조건을 만족하면 결국 $\nabla \hat{L}(x^{(t)}) \to 0$임을 보인다. 다시 말해, $x$-update는 augmented Lagrangian에 대한 stationary point 쪽으로 수렴한다.
 
 이후 기존 ADMM 수렴 결과를 결합하여, SAFE의 limit point가 원래 sparsity-constrained optimization 문제의 $\delta$-stationary point가 됨을 보인다. 이 결과는 SAFE가 sparse and flat solution을 찾는 방향으로 설계되었을 뿐 아니라, 적어도 sparse constrained optimization의 stationary point라는 엄밀한 의미에서 잘 정의된 알고리즘임을 보여준다.
 
@@ -287,7 +289,10 @@ SAFE의 $x$-update는 정확한 $\nabla \hat{L}(x)$ 대신, perturbation이 반�
 
 ### 4. Experiments
 
-실험 장의 목적은 세 가지이다. 첫째, SAFE가 실제로 sparse하고 flat한 해를 만드는지 확인한다. 둘째, 이미지 분류와 LLM pruning에서 성능 향상이 있는지 검증한다. 셋째, noisy data와 corruption 환경에서도 robust한지 살핀다.
+실험 장의 목적은 세 가지이다.
+1. SAFE가 실제로 sparse하고 flat한 해를 만드는지 확인한다.
+2. 이미지 분류와 LLM pruning에서 성능 향상이 있는지 검증한다.
+3. noisy data와 corruption 환경에서도 robust한지 살핀다.
 
 ---
 
@@ -320,11 +325,11 @@ LLM 실험은 SAFE의 일반성을 보여주는 파트이다. 논문은 LLaMA-2 
 
 #### 4.4. Robustness to Noisy Data
 
-이 절은 SAFE가 단순히 clean accuracy만 높은 것이 아니라, 현실적인 데이터 노이즈에도 강하다는 점을 보여준다. 논문은 세 가지 조건을 본다. 학습 시 label noise, 추론 시 common corruption, 그리고 adversarial perturbation 이다.
+이 절은 SAFE가 단순히 clean accuracy만 높은 것이 아니라, 현실적인 데이터 노이즈에도 강하다는 점을 보여준다. 이때 학습 시 label noise, 추론 시 common corruption, adversarial perturbation으로 3가지를 다루게 된다.
 
-먼저 label noise 실험에서는 CIFAR-10의 라벨을 25%, 50%, 75% 비율로 무작위 오염시키고, ResNet-20을 ADMM과 SAFE로 각각 학습한다. 결과는 매우 강력하다. 예를 들어 80% sparsity와 50% label noise에서 ADMM은 62.67%인 반면 SAFE는 86.55%를 기록한다. 95% sparsity와 75% noise에서도 ADMM은 39.68%, SAFE는 64.25%이다. 전반적으로 SAFE는 모든 noise ratio와 sparsity 구간에서 10~30%p 수준의 큰 이득을 보인다.
+먼저 label noise 실험에서는 CIFAR-10의 라벨을 25%, 50%, 75% 비율로 무작위 오염시키고, ResNet-20을 ADMM과 SAFE로 각각 학습한다. 예를 들어 80% sparsity와 50% label noise에서 ADMM은 62.67%인 반면 SAFE는 86.55%를 기록한다. 95% sparsity와 75% noise에서도 ADMM은 39.68%, SAFE는 64.25%이다. 전반적으로 SAFE는 모든 noise ratio와 sparsity 구간에서 10~30%p 수준의 큰 이득을 보인다.
 
-논문이 흥미롭게 지적하는 부분은 ADMM이 label noise를 완화하기 위해 sparsity 자체에 과도하게 의존하는 경향을 보인다는 점이다. 25% noise에서는 sparse double descent 유사 패턴까지 나타난다. 반면 SAFE에서는 이런 불안정성이 거의 보이지 않는다. 이는 sharpness minimization이 일종의 regularizer처럼 작동해 noisy label에 대한 과적합을 줄였다고 해석할 수 있다.
+논문이 지적하는 부분은 ADMM이 label noise를 완화하기 위해 sparsity 자체에 과도하게 의존하는 경향을 보인다는 점이다. 25% noise에서는 sparse double descent 유사 패턴까지 나타난다. 반면 SAFE에서는 이런 불안정성이 거의 보이지 않는다. 이는 sharpness minimization이 일종의 regularizer처럼 작동해 noisy label에 대한 과적합을 줄였다고 해석할 수 있다.
 
 추론 시 corruption에서도 SAFE의 이점은 유지된다. CIFAR-10C의 common corruption 평균 정확도는 90% sparsity에서 ADMM 70.06, SAFE 73.98이며, $\ell_\infty$-PGD에서는 ADMM 49.81, SAFE 56.43이다. 99% sparsity처럼 더 극단적인 조건에서도 SAFE는 common corruption과 adversarial setting 모두에서 더 강한 성능을 보인다. 즉 SAFE의 flatness 유도는 일반화 성능 향상뿐 아니라 노이즈와 공격에 대한 회복력 향상 으로도 연결된다.
 
@@ -332,33 +337,26 @@ LLM 실험은 SAFE의 일반성을 보여주는 파트이다. 논문은 LLaMA-2 
 
 #### 4.5. Comparison with Other SAM-based pruner
 
-이 절의 목적은 SAFE를 단순한 “SAM을 pruning에 얹은 방법”과 구분하는 데 있다. 비교 대상은 IMP+SAM과 CrAM이다. IMP+SAM은 iterative magnitude pruning 과정에 SAM을 적용하는 방식이고, CrAM은 compression-aware objective를 통해 compression 이후 손실 증가를 줄이려는 방식이다. 또한 논문은 CrAM+처럼 원래 gradient를 추가로 더하는 변형과, 이에 대응하는 SAFE+SG도 비교한다.
+이 절의 목적은 SAFE를 단순한 "SAM을 pruning에 얹은 방법"과 구분하는 데 있다. 비교 대상은 IMP+SAM과 CrAM이다. IMP+SAM은 iterative magnitude pruning 과정에 SAM을 적용하는 방식이고, CrAM은 compression-aware objective를 통해 compression 이후 손실 증가를 줄이려는 방식이다. 또한 논문은 CrAM+처럼 원래 gradient를 추가로 더하는 변형과, 이에 대응하는 SAFE+SG도 비교한다.
 
-결과를 보면, 기본 SAFE는 IMP+SAM과 CrAM보다 일관되게 안정적이며, SAFE+SG는 중간 sparsity에서는 CrAM+와 비슷하거나 약간 더 좋고, extreme sparsity에서는 더 우수하다. 예를 들어 ResNet-20/CIFAR-10에서 99.5% sparsity일 때 IMP+SAM(cubic)은 73.73%, CrAM+는 81.30%, SAFE는 79.55%, SAFE+SG는 85.85%이다. 특히 SAFE+SG가 가장 높은 성능을 보인다는 점은, SAFE의 구조 위에 보조 gradient를 더했을 때도 효과가 확장될 수 있음을 보여준다.
+결과를 보면, 기본 SAFE는 IMP+SAM과 CrAM보다 일관되게 안정적이며 SAFE+SG는 중간 sparsity에서는 CrAM+와 비슷하거나 약간 더 좋고 extreme sparsity에서는 더 우수하다. 예를 들어 ResNet-20/CIFAR-10에서 99.5% sparsity일 때 IMP+SAM(cubic)은 73.73%, CrAM+는 81.30%, SAFE는 79.55%, SAFE+SG는 85.85%이다. 특히 SAFE+SG가 가장 높은 성능을 보인다는 점은 SAFE의 구조 위에 보조 gradient를 더했을 때도 효과가 확장될 수 있음을 보여준다.
 
-그러나 이 절의 더 중요한 메시지는 수치 자체보다 해석에 있다. CrAM은 auxiliary trick이 없는 기본 형태로는 매우 불안정하며, 성능 향상이 CrAM+ 같은 추가 기법에 크게 의존한다. 반면 SAFE는 그런 추가 장치 없이도 이미 강한 성능을 보인다. 이는 SAFE의 장점이 단지 SAM-style perturbation 때문이 아니라, augmented Lagrangian의 smooth penalization과 split-variable 구조 자체에 있다 는 논문의 주장과 맞닿아 있다.
+그러나 이 절의 더 중요한 메시지는 수치 자체보다 해석에 있다. CrAM은 auxiliary trick이 없는 기본 형태로는 매우 불안정하며 성능 향상이 CrAM+ 같은 추가 기법에 크게 의존한다. 반면 SAFE는 그런 추가 장치 없이도 이미 강한 성능을 보인다. 이는 SAFE의 장점이 단지 SAM-style perturbation 때문이 아니라, augmented Lagrangian의 smooth penalization과 split-variable 구조 자체에 있다 는 논문의 주장과 맞닿아 있다.
 
 ---
 
 ### 5. Conclusion
 
-이 논문은 pruning을 희소성 문제로만 보지 않고, 희소성과 평탄성을 동시에 고려하는 constrained optimization 문제 로 재정의했다는 점에서 의미가 크다. SAFE는 augmented Lagrangian과 ADMM 기반의 split-variable 구조를 통해, 학습 가능한 변수 $x$는 flat minima를 향해 움직이게 하고, sparse proxy $z$는 정확한 sparsity constraint를 담당하게 만든다. 이 설계 덕분에 pruning은 더 이상 마지막에 갑자기 hard thresholding을 가하는 절차가 아니라, 학습 전반에 걸쳐 sparse하고 flat한 해를 점진적으로 형성하는 과정 이 된다.
+이 논문은 pruning을 희소성 문제로만 보지 않고, 희소성과 평탄성을 동시에 고려하는 constrained optimization 문제 로 재정의했다는 점에서 의미가 크다. SAFE는 augmented Lagrangian과 ADMM 기반의 split-variable 구조를 통해 학습 가능한 변수 $x$는 flat minima를 향해 움직이게 하고, sparse proxy $z$는 정확한 sparsity constraint를 담당하게 만든다. 이 설계 덕분에 pruning은 더 이상 마지막에 갑자기 hard thresholding을 가하는 절차가 아닌 학습 전반에 걸쳐 sparse하고 flat한 해를 점진적으로 형성하는 과정 이 된다.
 
 실험적으로도 SAFE는 이미지 분류와 LLM pruning 모두에서 강력한 결과를 보이며, 특히 extreme sparsity와 noisy environment에서 더 큰 이점을 드러낸다. SAFE+는 generalized projection을 통해 다양한 saliency score를 같은 프레임 안에서 해석하고 활용할 수 있게 하며, 실제로 LLM pruning에서는 기존 강력한 baselines를 넘어서는 성능을 보인다.
 
-결국 이 논문이 남기는 핵심 메시지는 분명하다. 좋은 sparse model은 단지 sparse하기만 해서는 안 되고, 반드시 flat해야 한다. SAFE는 바로 그 원리를 이론과 알고리즘, 그리고 실험으로 연결한 작업이다.
+결국 이 논문에서 시사하는 바는, 좋은 sparse model은 단지 sparse하기만 해서는 안 되고 반드시 flat해야만 한다는 것이다.
 
 ---
 
-### Acknowledgements
-
-논문은 본 연구가 POSTECH 관련 인공지능 대학원 프로그램, 인과추론 기반 vision-language 의사결정 연구 과제, 그리고 한국연구재단 지원을 포함한 복수의 연구비 지원을 받았음을 밝힌다. 이는 본 연구가 이론적 기여뿐 아니라 실제 대규모 실험을 수행할 수 있는 연구 인프라 위에서 진행되었음을 보여준다.
-
----
-
-### Impact Statement
-
-저자들은 이 연구가 기계학습의 이론적 이해와 실제 응용 모두에 영향을 줄 수 있다고 본다. 논문 자체는 즉각적인 사회적 위해를 직접적으로 강조하지 않지만, 대규모 모델을 더 효율적으로 만들고 real-world noise에 더 강인하게 만드는 기술은 향후 다양한 응용 분야에 영향을 줄 수 있으므로, 그 파급효과에 대한 지속적인 논의가 필요하다는 입장을 취한다.
+### Appendix
+* 해당 파트부터는 다소 엄밀함을 따지고 내용의 메인 알고리즘을 뒷받침하는 근거로 쓰이기에, 생성형 ai의 도움을 받아 다소 간단하게 정리하는 식으로 작성하였다.
 
 ---
 
@@ -575,4 +573,5 @@ Review by 변정우, Aerospace Engineering Undergraduate Researcher
 * 2026.05.03: [Draft] 전체적인 내용 리딩 완료 및 초안 작성  
 * 2026.05.04: [ver_1] part 1 수식 및 관련 내용 업데이트
 * 2026.05.06: [ver_2] part 2,3 수식 및 관련 내용 업데이트
-* 2026.05.0: [ver_1] part 1 수식 및 관련 내용 업데이트
+* 2026.05.07~18 세미나 발표 ppt 제작 및 발표
+* 2026.05.19: [ver_1] part 4,5,Appendix 수식 및 관련 내용 업데이트, 세미나 발표 ppt 업로드
