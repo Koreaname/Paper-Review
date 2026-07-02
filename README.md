@@ -13,7 +13,7 @@ Category는 크게 Aerospace-Engineering with Control-Theory와 Optimization wit
 | 2026-05-01 ~ 05-19 | 02-Optimization with ML,DL,CVX | SAFE: Finding Sparse and Flat Minima to Improve Pruning | Complete |
 | 2026- ~ | 02-Optimization with ML,DL,CVX | Sharpness-Aware Minimization for Efficiently Improving Generalization | Not for a Review Just to Study |
 | 2026- ~ | 02-Optimization with ML,DL,CVX | A Systematic DNN Weight Pruning Framework using Alternating Direction Method of Multipliers | Not for a Review Just to Study |
-| 2026-06-29 ~ | 02-Optimization with ML,DL,CVX | Convex Optimization for Trajectory Generation | Reading |
+| 2026-06-29 ~ | 01-Aerospace-Engineering with Control-Theory | Convex Optimization for Trajectory Generation | Reading |
 | 2026- ~ | 02-Optimization with ML,DL,CVX | CrAM: A Compression-Aware Minimizer | Soon |
 | 2026- ~ | 02-Optimization with ML,DL,CVX | Differentiable Convex Optimization Layers | Soon |
 | 2026- ~ | 02-Optimization with ML,DL,CVX | Efficient differentiable quadratic programming layers: an ADMM approach | Soon |
