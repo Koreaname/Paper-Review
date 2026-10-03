@@ -14,7 +14,7 @@ Category는 크게 Aerospace-Engineering with Control-Theory와 Optimization wit
 | 2026- ~ | 02-Optimization with ML,DL,CVX | Sharpness-Aware Minimization for Efficiently Improving Generalization | Not for a Review Just to Study |
 | 2026- ~ | 02-Optimization with ML,DL,CVX | A Systematic DNN Weight Pruning Framework using Alternating Direction Method of Multipliers | Not for a Review Just to Study |
 | 2026-06-29 ~ 07-31 | 01-Aerospace-Engineering with Control-Theory | Convex Optimization for Trajectory Generation | Complete |
-| 2026-06-29 ~ 10-02 | 01-Aerospace-Engineering with Control-Theory | Obstacle avoidance guidance for Mars powered descent using convex optimization and elevation angle | Complete |
+| 2026-07-13 ~ 10-02 | 01-Aerospace-Engineering with Control-Theory | Obstacle avoidance guidance for Mars powered descent using convex optimization and elevation angle | Complete |
 
 
 | 2026- ~ | 02-Optimization with ML,DL,CVX | CrAM: A Compression-Aware Minimizer | Soon |
