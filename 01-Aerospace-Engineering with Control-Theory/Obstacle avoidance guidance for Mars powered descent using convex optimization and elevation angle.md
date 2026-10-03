@@ -9,8 +9,6 @@
 * **Official Link:** [Elsevier — Obstacle avoidance guidance for Mars powered descent using convex optimization and elevation angle](https://doi.org/10.1016/j.actaastro.2026.05.059)
 * **Keywords:** Powered Descent / Obstacle Avoidance / Convex Optimization / Trajectory Optimization
 
-본문은 원논문과 최종 세미나 발표 자료를 바탕으로 정리하였다. Problem 1–7, Algorithm 1–2, 식 번호, Fig. 및 Table 번호는 모두 **원논문 기준**이며, 별도로 표시한 논의 사항은 결과를 해석할 때 구분해야 할 범위를 다룬다.
-
 ---
 
 ### 1. Introduction
@@ -58,21 +56,13 @@
 
 동역학은 다음과 같이 표현한다.
 
-$$
-\begin{aligned}
-\dot{\mathbf r}(t)&=\mathbf v(t),\\
-\dot{\mathbf v}(t)&=\mathbf g_m+\frac{\mathbf T(t)}{m(t)},\\
-\dot m(t)&=-\lambda\lVert\mathbf T(t)\rVert_2.
-\end{aligned}
-$$
+$$\begin{aligned} \dot{\mathbf r}(t)&=\mathbf v(t),\\ \dot{\mathbf v}(t)&=\mathbf g_m+\frac{\mathbf T(t)}{m(t)},\\ \dot m(t)&=-\lambda\lVert\mathbf T(t)\rVert_2. \end{aligned}$$
 
 첫 번째 식은 위치 변화, 두 번째 식은 중력과 추력에 의한 가속도, 세 번째 식은 연료 사용에 따른 질량 감소를 나타낸다. 즉, 엔진이 큰 추력을 낼수록 연료가 빠르게 소모되고, 질량이 감소하면서 같은 추력이 만드는 가속도도 달라진다.
 
 연료 소모 계수는 원문 식 (2)에 따라 다음과 같이 둔다.
 
-$$
-\lambda=\frac{1}{I_{sp}g_e\cos\phi}.
-$$
+$$\lambda=\frac{1}{I_{sp}g_e\cos\phi}.$$
 
 $I_{sp}$는 specific impulse, $g_e$는 지구 중력 가속도이며, $\phi$는 추력기 배치에 따른 보정에 사용되는 각도다. 여기서 $g_e$는 추진계의 연료 소모 계수를 정의하는 데 쓰이고, 운동방정식의 중력은 $\mathbf g_m$이라는 점을 구분해야 한다.
 
@@ -80,22 +70,11 @@ $I_{sp}$는 specific impulse, $g_e$는 지구 중력 가속도이며, $\phi$는 
 
 Elevation angle $\theta$는 착륙점을 기준으로 위치 벡터가 수평면과 이루는 각이다. 수평 거리를
 
-$$
-\rho(t):=\sqrt{r_y(t)^2+r_z(t)^2}
-$$
+$$\rho(t):=\sqrt{r_y(t)^2+r_z(t)^2}$$
 
 로 쓰면, 원문 식 (3)은 다음과 같다.
 
-$$
-\theta(t)
-=
-\arcsin\left(
-\frac{r_x(t)}{\sqrt{r_x(t)^2+r_y(t)^2+r_z(t)^2}}
-\right)
-=
-\arctan\left(\frac{r_x(t)}{\rho(t)}\right),
-\qquad \rho(t)\ne0.
-$$
+$$\theta(t) = \arcsin\left( \frac{r_x(t)}{\sqrt{r_x(t)^2+r_y(t)^2+r_z(t)^2}} \right) = \arctan\left(\frac{r_x(t)}{\rho(t)}\right), \qquad \rho(t)\ne0.$$
 
 같은 수평 거리에서 고도가 높거나, 같은 고도에서 수평 거리가 작으면 고도각은 커진다. 논문은 이러한 기하 관계를 이용해 수직에 가까운 접근과 terminal camera field of view의 개선을 유도한다.
 
@@ -105,24 +84,13 @@ $$
 
 초기 및 종단 조건은 다음과 같다. 이후 시간 원점은 논문과 같이 $t_0=0$으로 둔다.
 
-$$
-\begin{aligned}
-\mathbf r(t_0)&=\mathbf r_0,&
-\mathbf v(t_0)&=\mathbf v_0,&
-m(t_0)&=m_{\mathrm{wet}},\\
-\mathbf r(t_f)&=\mathbf r_f,&
-\mathbf v(t_f)&=\mathbf v_f,&
-m(t_f)&\ge m_{\mathrm{dry}}.
-\end{aligned}
-$$
+$$\begin{aligned} \mathbf r(t_0)&=\mathbf r_0,& \mathbf v(t_0)&=\mathbf v_0,& m(t_0)&=m_{\mathrm{wet}},\\ \mathbf r(t_f)&=\mathbf r_f,& \mathbf v(t_f)&=\mathbf v_f,& m(t_f)&\ge m_{\mathrm{dry}}. \end{aligned}$$
 
 수치 실험에서는 목표 위치와 속도를 모두 영벡터로 설정한다. 종단 질량 하한은 추진 과정에서 사용 가능한 연료를 모두 넘겨 쓰지 않도록 하는 조건이다.
 
 추력 크기는 다음 범위에 있어야 한다.
 
-$$
-0<T_{\min}\le\lVert\mathbf T(t)\rVert_2\le T_{\max}.
-$$
+$$0<T_{\min}\le\lVert\mathbf T(t)\rVert_2\le T_{\max}.$$
 
 $T_{\min}>0$이므로 하강 중 엔진을 끄는 경우는 허용하지 않는다. 특히 $\lVert\mathbf T\rVert_2\ge T_{\min}$은 원점 부근의 작은 추력을 제외하는 조건으로, 원래 문제의 non-convex성을 만드는 핵심 요소다. (원문 식 (4)–(5))
 
@@ -132,38 +100,44 @@ $T_{\min}>0$이므로 하강 중 엔진을 끄는 경우는 허용하지 않는�
 
 **A. Conventional glide-slope constraint**
 
-$$
-\rho(t)\tan\gamma_{gs}\le r_x(t).
-$$
+$$\rho(t)\tan\gamma_{gs}\le r_x(t).$$
 
 착륙점에서 수평으로 멀리 떨어질수록 더 높은 고도를 요구한다. 이는 second-order cone 형태로 다루기 편리하지만, 실제 장애물보다 충분히 높은 곳에서도 수평 거리에 비례하는 고도 제한을 계속 부과한다.
 
 **B. Relaxed glide-slope constraint**
 
-$$
-r_x(t)\ge
-\begin{cases}
-0,&\rho(t)\le l_1,\\
-\bigl(\rho(t)-l_1\bigr)\tan\gamma_{new},&l_1<\rho(t)<l_2,\\
-h,&l_2\le\rho(t),
-\end{cases}
-\qquad
-\tan\gamma_{new}=\frac{h}{l_2-l_1}.
-$$
+수평 거리를 다음과 같이 정의한다.
 
+$$\rho(t)=\sqrt{r_y(t)^2+r_z(t)^2}$$
+
+Relaxed glide-slope constraint는 수평 거리에 따라 세 구간으로 나누어진다.
+
+* $\rho(t)\le l_1$ 인 경우
+
+$$r_x(t)\ge 0$$
+
+* $l_1<\rho(t)<l_2$ 인 경우
+
+$$r_x(t)\ge \left(\rho(t)-l_1\right)\tan\gamma_{new}$$
+
+* $l_2\le\rho(t)$ 인 경우
+
+$$r_x(t)\ge h$$
+
+이때 relaxed glide-slope angle은
+
+$$\tan\gamma_{new}=\frac{h}{l_2-l_1}$$
+
+로 정의된다.
+
+착륙점 주변 반경 $l_1$ 안에서는 지면 이상의 고도만 요구하고, $l_1$과 $l_2$ 사이에서는 경사면을 따라 요구 고도를 높인다. 이후 충분히 멀어진 영역에서는 요구 고도를 $h$로 제한한다. 여기서 relaxed는 안전을 포기한다는 의미가 아니라, **충분히 높은 영역에서도 기존 cone이 계속 부과하던 추가 제약을 완화한다는 의미**이다.
 착륙점 주변 반경 $l_1$ 안에서는 지면 이상의 고도만 요구하고, $l_1$과 $l_2$ 사이에서는 경사면을 따라 요구 고도를 높인다. 이후에는 요구 고도를 $h$로 제한한다. 여기서 relaxed는 안전을 포기한다는 의미가 아니라, **충분히 높은 영역에서 기존 cone이 부과하던 추가 제한을 완화한다**는 의미다.
 
 **C. Stepwise constraint**
 
 원문 식 (8)의 표기는 다음과 같다.
 
-$$
-r_x(t)\ge
-\begin{cases}
-0,&\rho(t)\le l,\\
-h,&l\le\rho(t).
-\end{cases}
-$$
+$$r_x(t)\ge \begin{cases} 0,&\rho(t)\le l,\\ h,&l\le\rho(t). \end{cases}$$
 
 안전 반경 안쪽에서는 착륙할 수 있지만, 바깥쪽에서는 안전 고도 $h$ 이상을 유지하도록 하는 계단형 모델이다. Relaxed glide-slope의 경사 구간 대신 높이가 급격히 변하는 경계를 사용한다.
 
@@ -175,20 +149,11 @@ Relaxed 및 stepwise 모델은 기존 glide-slope보다 지형에 맞는 접근 
 
 **Problem 1은 원래의 최소연료 powered descent 문제**다. 목적함수는 종단 질량 최대화이며, 고정된 초기 질량과 연료 소모 계수 아래에서 추력 크기 적분 최소화와 동등하다.
 
-$$
-\min_{\mathbf T(\cdot)}-m(t_f)
-\quad\Longleftrightarrow\quad
-\min_{\mathbf T(\cdot)}
-\int_{t_0}^{t_f}\lVert\mathbf T(t)\rVert_2\,dt.
-$$
+$$\min_{\mathbf T(\cdot)}-m(t_f) \quad\Longleftrightarrow\quad \min_{\mathbf T(\cdot)} \int_{t_0}^{t_f}\lVert\mathbf T(t)\rVert_2\,dt.$$
 
 이 동등성은 다음 질량 관계에서 확인할 수 있다.
 
-$$
-m_{\mathrm{wet}}-m(t_f)
-=
-\lambda\int_{t_0}^{t_f}\lVert\mathbf T(t)\rVert_2\,dt.
-$$
+$$m_{\mathrm{wet}}-m(t_f) = \lambda\int_{t_0}^{t_f}\lVert\mathbf T(t)\rVert_2\,dt.$$
 
 문제에는 동역학, 초기·종단 조건, 추력 범위, 앞의 세 장애물 제약 중 해당하는 모델이 함께 들어간다. 추력 하한과 질량에 의존하는 동역학 때문에 원래 formulation은 non-convex optimal control problem이다.
 
@@ -214,72 +179,37 @@ Problem 1–7의 관계를 정리하면 다음과 같다.
 
 먼저 추력 크기를 대신 다룰 scalar auxiliary variable $\Gamma(t)$를 도입한다.
 
-$$
-\begin{aligned}
-\lVert\mathbf T(t)\rVert_2&\le\Gamma(t),\\
-T_{\min}&\le\Gamma(t)\le T_{\max},\\
-\dot m(t)&=-\lambda\Gamma(t).
-\end{aligned}
-$$
+$$\begin{aligned} \lVert\mathbf T(t)\rVert_2&\le\Gamma(t),\\ T_{\min}&\le\Gamma(t)\le T_{\max},\\ \dot m(t)&=-\lambda\Gamma(t). \end{aligned}$$
 
 원래 추력 벡터에 직접 걸려 있던 크기 하한을 scalar variable의 범위로 옮기는 것이다. 논문은 기존 LCvx 연구를 근거로, 연료 최적화 조건에서 이 완화가 lossless하게 작동한다고 설명한다. 여기서의 relaxation과 뒤에서 사용하는 Taylor approximation은 서로 다른 단계다. (원문 §3.1, 식 (10)–(16))
 
 이후 다음 변수 치환을 사용한다.
 
-$$
-z(t):=\ln m(t),
-\qquad
-\mathbf u(t):=\frac{\mathbf T(t)}{m(t)},
-\qquad
-\sigma(t):=\frac{\Gamma(t)}{m(t)}.
-$$
+$$z(t):=\ln m(t), \qquad \mathbf u(t):=\frac{\mathbf T(t)}{m(t)}, \qquad \sigma(t):=\frac{\Gamma(t)}{m(t)}.$$
 
 $\Gamma$는 추력 단위의 보조변수이고, $\sigma$는 질량으로 정규화한 scalar thrust variable이다. 따라서 $\sigma$는 속도나 질량이 아니라 가속도 단위를 가지며, 벡터 $\mathbf u$의 크기를 위에서 제한한다.
 
 치환 후 동역학은 다음과 같이 정리된다.
 
-$$
-\begin{aligned}
-\dot{\mathbf r}(t)&=\mathbf v(t),\\
-\dot{\mathbf v}(t)&=\mathbf g_m+\mathbf u(t),\\
-\dot z(t)&=-\lambda\sigma(t),\\
-\lVert\mathbf u(t)\rVert_2&\le\sigma(t).
-\end{aligned}
-$$
+$$\begin{aligned} \dot{\mathbf r}(t)&=\mathbf v(t),\\ \dot{\mathbf v}(t)&=\mathbf g_m+\mathbf u(t),\\ \dot z(t)&=-\lambda\sigma(t),\\ \lVert\mathbf u(t)\rVert_2&\le\sigma(t). \end{aligned}$$
 
 특히 log-mass의 미분은
 
-$$
-\dot z
-=\frac{\dot m}{m}
-=-\lambda\frac{\Gamma}{m}
-=-\lambda\sigma
-$$
+$$\dot z =\frac{\dot m}{m} =-\lambda\frac{\Gamma}{m} =-\lambda\sigma$$
 
 가 된다. 이 변환 덕분에 원래 가속도 식의 $\mathbf T/m$과 질량 감소식의 비선형 결합을 affine dynamics로 표현할 수 있다.
 
 초기 및 종단 질량 조건은
 
-$$
-z(t_0)=\ln m_{\mathrm{wet}},
-\qquad
-z(t_f)\ge\ln m_{\mathrm{dry}}
-$$
+$$z(t_0)=\ln m_{\mathrm{wet}}, \qquad z(t_f)\ge\ln m_{\mathrm{dry}}$$
 
 로 바뀌고, 추력 경계는 다음과 같이 남는다.
 
-$$
-T_{\min}e^{-z(t)}\le\sigma(t)\le T_{\max}e^{-z(t)}.
-$$
+$$T_{\min}e^{-z(t)}\le\sigma(t)\le T_{\max}e^{-z(t)}.$$
 
 이에 따라 **Problem 2**의 목적함수는
 
-$$
-\min_{\mathbf u(\cdot),\sigma(\cdot)}-z(t_f)
-\quad\Longleftrightarrow\quad
-\min_{\mathbf u(\cdot),\sigma(\cdot)}
-\int_{t_0}^{t_f}\sigma(t)\,dt
-$$
+$$\min_{\mathbf u(\cdot),\sigma(\cdot)}-z(t_f) \quad\Longleftrightarrow\quad \min_{\mathbf u(\cdot),\sigma(\cdot)} \int_{t_0}^{t_f}\sigma(t)\,dt$$
 
 가 된다. 하지만 변수 치환만으로 문제가 완전히 convex해진 것은 아니다. 특히 $\sigma\le T_{\max}e^{-z}$라는 지수함수 아래쪽 영역의 제약이 남아 있으므로, 다음 단계에서 추력 경계를 다시 처리한다.
 
@@ -287,26 +217,11 @@ $$
 
 원문은 추력 하한과 상한을 서로 다른 차수로 근사한다. 아래 표기는 원문 식 (17)–(18)의 정의를 따른다.
 
-$$
-\begin{aligned}
-z_l(t)&=\ln\bigl(m_{\mathrm{wet}}-\lambda T_{\min}t\bigr),\\
-z_u(t)&=\ln\bigl(m_{\mathrm{wet}}-\lambda T_{\max}t\bigr),\\
-d_l(t)&=z(t)-z_l(t),\\
-d_u(t)&=z(t)-z_u(t).
-\end{aligned}
-$$
+$$\begin{aligned} z_l(t)&=\ln\bigl(m_{\mathrm{wet}}-\lambda T_{\min}t\bigr),\\ z_u(t)&=\ln\bigl(m_{\mathrm{wet}}-\lambda T_{\max}t\bigr),\\ d_l(t)&=z(t)-z_l(t),\\ d_u(t)&=z(t)-z_u(t). \end{aligned}$$
 
 이를 이용하면 추력 경계는 다음과 같이 된다.
 
-$$
-\begin{aligned}
-T_{\min}e^{-z_l(t)}
-\left(1-d_l(t)+\frac{1}{2}d_l(t)^2\right)
-&\le\sigma(t),\\
-\sigma(t)
-&\le T_{\max}e^{-z_u(t)}\left(1-d_u(t)\right).
-\end{aligned}
-$$
+$$\begin{aligned} T_{\min}e^{-z_l(t)} \left(1-d_l(t)+\frac{1}{2}d_l(t)^2\right) &\le\sigma(t),\\ \sigma(t) &\le T_{\max}e^{-z_u(t)}\left(1-d_u(t)\right). \end{aligned}$$
 
 **추력 하한은 convex quadratic, 추력 상한은 affine 형태**로 다룬다는 것이 핵심이다. 하한 쪽의 $T_{\min}e^{-z}\le\sigma$는 이미 convex epigraph이지만, 논문은 이를 SOCP-compatible한 형태로 표현하면서 지수함수의 곡률을 반영하기 위해 2차식을 사용한다. 반면 상한 쪽은 affine tangent를 이용해 non-convex hypograph를 대체한다.
 
@@ -318,100 +233,37 @@ $z_l$과 $z_u$의 첨자는 각 추력 경계에 사용하는 reference를 구�
 
 연속시간 문제를 실제 solver에 입력하기 위해 zero-order hold를 적용한다. 논문의 인덱스에서는 제어 입력이 $k=0,\ldots,N$, 상태가 $k=0,\ldots,N+1$에 정의된다.
 
-$$
-\Delta t=\frac{t_f-t_0}{N+1},
-\qquad
-t_k=k\Delta t,
-\qquad
-t_0=0.
-$$
+$$\Delta t=\frac{t_f-t_0}{N+1}, \qquad t_k=k\Delta t, \qquad t_0=0.$$
 
 상태와 중력 입력을 다음과 같이 묶는다.
 
-$$
-\mathbf X(t)=
-\begin{bmatrix}
-\mathbf r(t)\\
-\mathbf v(t)\\
-z(t)
-\end{bmatrix},
-\qquad
-\mathcal G_m=
-\begin{bmatrix}
-\mathbf g_m\\
-0
-\end{bmatrix}.
-$$
+$$\mathbf X(t)= \begin{bmatrix} \mathbf r(t)\\ \mathbf v(t)\\ z(t) \end{bmatrix}, \qquad \mathcal G_m= \begin{bmatrix} \mathbf g_m\\ 0 \end{bmatrix}.$$
 
 원문 식 (20)–(24)의 상태공간 표현은
 
-$$
-\dot{\mathbf X}
-=A_c\mathbf X
-+B_c
-\begin{bmatrix}
-\mathbf u\\
-\sigma
-\end{bmatrix}
-+B_c\mathcal G_m
-$$
+$$\dot{\mathbf X} =A_c\mathbf X +B_c \begin{bmatrix} \mathbf u\\ \sigma \end{bmatrix} +B_c\mathcal G_m$$
 
 이며, 행렬은 다음과 같다.
 
-$$
-A_c=
-\begin{bmatrix}
-0_{3\times3}&I_3&0_{3\times1}\\
-0_{3\times3}&0_{3\times3}&0_{3\times1}\\
-0_{1\times3}&0_{1\times3}&0
-\end{bmatrix},
-\qquad
-B_c=
-\begin{bmatrix}
-0_{3\times3}&0_{3\times1}\\
-I_3&0_{3\times1}\\
-0_{1\times3}&-\lambda
-\end{bmatrix}.
-$$
+$$A_c= \begin{bmatrix} 0_{3\times3}&I_3&0_{3\times1}\\ 0_{3\times3}&0_{3\times3}&0_{3\times1}\\ 0_{1\times3}&0_{1\times3}&0 \end{bmatrix}, \qquad B_c= \begin{bmatrix} 0_{3\times3}&0_{3\times1}\\ I_3&0_{3\times1}\\ 0_{1\times3}&-\lambda \end{bmatrix}.$$
 
 이에 따라 이산 동역학은
 
-$$
-\mathbf X_{k+1}
-=A_d\mathbf X_k
-+B_d
-\begin{bmatrix}
-\mathbf u_k\\
-\sigma_k
-\end{bmatrix}
-+B_d\mathcal G_m,
-\qquad k=0,\ldots,N
-$$
+$$\mathbf X_{k+1} =A_d\mathbf X_k +B_d \begin{bmatrix} \mathbf u_k\\ \sigma_k \end{bmatrix} +B_d\mathcal G_m, \qquad k=0,\ldots,N$$
 
 로 표현된다.
 
-$$
-A_d=e^{A_c\Delta t},
-\qquad
-B_d=\int_0^{\Delta t}e^{A_c(\Delta t-\tau)}B_c\,d\tau.
-$$
+$$A_d=e^{A_c\Delta t}, \qquad B_d=\int_0^{\Delta t}e^{A_c(\Delta t-\tau)}B_c\,d\tau.$$
 
 초기 상태, 종단 위치·속도·질량, SOC thrust constraint와 Taylor 근사된 추력 경계도 각 노드에 맞게 적용한다. **Problem 4**의 목적함수는
 
-$$
-\min -z_{N+1}
-\quad\Longleftrightarrow\quad
-\min\lambda\Delta t\sum_{k=0}^{N}\sigma_k
-$$
+$$\min -z_{N+1} \quad\Longleftrightarrow\quad \min\lambda\Delta t\sum_{k=0}^{N}\sigma_k$$
 
 가 된다. 이 formulation은 CVX와 같은 모델링 도구를 통해 구성하고, MOSEK과 같은 convex solver로 풀 수 있는 discrete SOCP다.
 
 여기서 $\lambda\Delta t\sum_k\sigma_k$를 연료 소모량의 kg 값과 혼동하지 않아야 한다. 변환된 질량 동역학을 적분하면
 
-$$
-\lambda\Delta t\sum_{k=0}^{N}\sigma_k
-=\ln\left(\frac{m_{\mathrm{wet}}}{m(t_f)}\right)
-$$
+$$\lambda\Delta t\sum_{k=0}^{N}\sigma_k =\ln\left(\frac{m_{\mathrm{wet}}}{m(t_f)}\right)$$
 
 이므로, 이는 연료 소모와 단조 관계를 갖는 **log-mass 기반 목적함수**다. 실제 소모 질량은 $m_{\mathrm{wet}}-m(t_f)$로 계산한다.
 
@@ -421,21 +273,11 @@ Problem 4는 미리 정한 reference mass history를 기준으로 지수형 추�
 
 이를 개선하기 위해 이전 반복의 해 $\widetilde{\mathbf X}_k$에서 log-mass $\widetilde z_k$를 추출하고, 다음 반복의 Taylor expansion point로 사용한다. (원문 §3.3, 식 (29)–(30))
 
-$$
-d_k:=z_k-\widetilde z_k.
-$$
+$$d_k:=z_k-\widetilde z_k.$$
 
 갱신된 추력 제약은 다음과 같다.
 
-$$
-\begin{aligned}
-T_{\min}e^{-\widetilde z_k}
-\left(1-d_k+\frac{1}{2}d_k^2\right)
-&\le\sigma_k,\\
-\sigma_k
-&\le T_{\max}e^{-\widetilde z_k}(1-d_k).
-\end{aligned}
-$$
+$$\begin{aligned} T_{\min}e^{-\widetilde z_k} \left(1-d_k+\frac{1}{2}d_k^2\right) &\le\sigma_k,\\ \sigma_k &\le T_{\max}e^{-\widetilde z_k}(1-d_k). \end{aligned}$$
 
 이는 엔진의 물리적 추력 범위를 바꾸는 과정이 아니다. **현재 구한 질량 이력에 맞춰 추력 경계의 근사점을 다시 잡는 과정**이다. 매 반복에서는 reference가 고정되어 있으므로 convex subproblem을 유지하면서, 반복 사이에서 근사 정확도를 개선한다.
 
@@ -443,50 +285,35 @@ $$
 
 장애물 제약은 다음 형태로 통합한다.
 
-$$
-r_{x,k}\ge F(\mathbf X_k,\delta),
-\qquad 0\le\delta\le1.
-$$
+$$r_{x,k}\ge F(\mathbf X_k,\delta), \qquad 0\le\delta\le1.$$
 
 $F$는 앞에서 정의한 relaxed glide-slope 또는 stepwise 요구 높이에 $\delta$를 적용한 함수다. 예를 들어 relaxed glide-slope의 중간 구간은 $\delta(\rho-l_1)\tan\gamma_{new}$, 외부 구간은 $\delta h$가 된다. Stepwise의 외부 구간 역시 $\delta h$로 표현한다. (원문 식 (31)–(33))
 
 반복 $j$에서 homotopy parameter는
 
-$$
-\delta_j=\frac{\min(j,H)}{H}
-$$
+$$\delta_j=\frac{\min(j,H)}{H}$$
 
 로 설정한다. 처음에는 쉬운 높이 제약에서 출발하고, 반복이 진행될수록 $\delta=1$인 원래 장애물 제약으로 이동한다. 이는 실제 장애물을 낮춘다는 의미가 아니라, **계산 과정에서 적용하는 요구 높이를 점진적으로 강화한다**는 의미다.
 
 여기서 중요한 것은 reference trajectory의 역할이다. 원문 Algorithm 1의 7번째 단계는 $F(\widetilde{\mathbf X}_k,\delta_j)$를 계산하도록 명시한다. 이를 반복 인덱스를 드러내어 쓰면
 
-$$
-F_k^{(j)}:=F(\widetilde{\mathbf X}_k,\delta_j)
-$$
+$$F_k^{(j)}:=F(\widetilde{\mathbf X}_k,\delta_j)$$
 
 가 된다. 즉, 내부 subproblem에서는 이전 궤적으로 계산한 요구 높이를 사용하고, 새로운 해를 얻은 뒤 reference를 갱신한다. 원문의 일반 제약식과 알고리즘의 reference 평가 단계를 함께 읽어야 하며, 움직이는 결정변수에 원래 non-convex 분기식을 그대로 넣었는데 저절로 convex해진다는 의미는 아니다.
 
 하지만 갱신된 높이 제약을 즉시 강제하면 추력 및 종단 조건과 충돌하여 중간 문제가 infeasible해질 수 있다. 이를 완화하기 위해 원문 식 (34)는 slack을 다음 부호로 도입한다.
 
-$$
-r_{x,k}\ge F_k^{(j)}+\zeta_k.
-$$
+$$r_{x,k}\ge F_k^{(j)}+\zeta_k.$$
 
 **이 표기에서 제약을 완화하는 방향은 음의 $\zeta_k$다.** 예를 들어 요구 높이가 500 m인데 현재 고도가 480 m라면,
 
-$$
-480\ge500+(-20)
-$$
+$$480\ge500+(-20)$$
 
 으로 중간 해를 허용할 수 있다. 따라서 이 식에 $\zeta_k\ge0$을 임의로 추가하면 원문의 완화 의도와 달리 더 강한 고도 제약이 된다.
 
 Slack 사용을 억제하기 위해 **Problem 5**는 다음 목적함수를 사용한다.
 
-$$
-\min_{\mathbf X,\mathbf u,\sigma,\zeta}
-\lambda\Delta t\sum_{k=0}^{N}\sigma_k
-+W_\zeta\lVert\boldsymbol\zeta\rVert_2.
-$$
+$$\min_{\mathbf X,\mathbf u,\sigma,\zeta} \lambda\Delta t\sum_{k=0}^{N}\sigma_k +W_\zeta\lVert\boldsymbol\zeta\rVert_2.$$
 
 제약은 이산 동역학, 초기·종단 조건, $\lVert\mathbf u_k\rVert_2\le\sigma_k$, 갱신된 Taylor 추력 경계, homotopy-based obstacle constraint다. 첫 번째 목적항은 연료 사용을 줄이고, 두 번째 항은 장애물 제약을 완화하는 정도를 줄인다. 원문은 slack vector의 **2-norm 자체**를 사용하며, 제곱한 2-norm과는 구분한다.
 
@@ -514,21 +341,11 @@ Algorithm 1을 여러 종단시간에 대해 실행하면, 각 시간에서 필�
 
 이 곡선과 함께 구분해야 할 경계는 maximum-thrust fuel, minimum-thrust fuel, maximum fuel carried다. 질량 소모식으로부터 일정 추력에 대응하는 두 직선은
 
-$$
-\begin{aligned}
-m_{\mathrm{fuel,max\ thrust}}(t_f)
-&=\lambda T_{\max}(t_f-t_0),\\
-m_{\mathrm{fuel,min\ thrust}}(t_f)
-&=\lambda T_{\min}(t_f-t_0)
-\end{aligned}
-$$
+$$\begin{aligned} m_{\mathrm{fuel,max\ thrust}}(t_f) &=\lambda T_{\max}(t_f-t_0),\\ m_{\mathrm{fuel,min\ thrust}}(t_f) &=\lambda T_{\min}(t_f-t_0) \end{aligned}$$
 
 로 표현된다. 반면 탑재 연료 한계는
 
-$$
-m_{\mathrm{fuel,carried}}
-=m_{\mathrm{wet}}-m_{\mathrm{dry}}
-$$
+$$m_{\mathrm{fuel,carried}} =m_{\mathrm{wet}}-m_{\mathrm{dry}}$$
 
 로 결정된다. 기본 설정에서는 $1905-1405=500$ kg이다.
 
@@ -540,16 +357,7 @@ $$
 
 고도각을 직접 최대화하면 위치의 비율과 역삼각함수가 목적함수에 들어간다. 논문은 이를 그대로 최적화하는 대신, 고도각이 커지는 기하학적 방향을 반영한 convex surrogate objective를 사용한다. (원문 식 (37)–(39))
 
-$$J_\alpha
-=
-\int_{t_0}^{t_f}
-\left[
--\alpha r_x(t)
-+\lvert r_y(t)\rvert
-+\lvert r_z(t)\rvert
-\right]dt,
-\qquad \alpha>0.
-$$
+$$J_\alpha = \int_{t_0}^{t_f} \left[ -\alpha r_x(t) +\lvert r_y(t)\rvert +\lvert r_z(t)\rvert \right]dt, \qquad \alpha>0.$$
 
 최소화 문제이므로 $-\alpha r_x$는 고도 확보를 선호하게 하고, $\lvert r_y\rvert+\lvert r_z\rvert$는 수평 위치가 착륙점에서 멀어지는 것을 억제한다. 수직 항은 affine이고 수평 항은 convex absolute-value function이므로, 목적함수 자체는 convex하다.
 
@@ -557,25 +365,13 @@ $$
 
 고정된 $t_f$에서 원문은 이산 목적함수를 다음과 같이 쓴다.
 
-$$
-\min_{\mathbf X,\mathbf u,\sigma}
-\sum_{k=1}^{N}
-\left(
--\alpha r_{x,k}
-+\lvert r_{y,k}\rvert
-+\lvert r_{z,k}\rvert
-\right).
-$$
+$$\min_{\mathbf X,\mathbf u,\sigma} \sum_{k=1}^{N} \left( -\alpha r_{x,k} +\lvert r_{y,k}\rvert +\lvert r_{z,k}\rvert \right).$$
 
 **Problem 6**은 Problem 4의 동역학과 conventional glide-slope, Taylor 추력 제약을 유지하고, 연료 최소화 목적함수를 이 위치 기반 목적함수로 바꾼 문제다. 고정된 시간의 Problem 6에서는 공통 양의 계수 $\Delta t$를 생략해도 최소점이 달라지지 않는다. 다만 서로 다른 시간을 비교할 때는 단순히 이 목적값만으로 관측 성능을 평가하지 않으며, 뒤에서 별도의 $\Psi$를 사용한다.
 
 연료 제한은 종단 질량 하한으로 반영한다. 원문은 P6·P7에서 다음 표기를 사용한다.
 
-$$
-m_{\mathrm{dry}}=m_{\mathrm{wet}}-m_{\mathrm{fuel}},
-\qquad
-z_{N+1}\ge\ln\left(m_{\mathrm{wet}}-m_{\mathrm{fuel}}\right).
-$$
+$$m_{\mathrm{dry}}=m_{\mathrm{wet}}-m_{\mathrm{fuel}}, \qquad z_{N+1}\ge\ln\left(m_{\mathrm{wet}}-m_{\mathrm{fuel}}\right).$$
 
 여기서 $m_{\mathrm{dry}}$는 기본 문제의 물리적 건조질량을 새로 바꾼다는 의미가 아니라, **선택한 fuel budget에 대응하는 terminal-mass lower bound**로 재사용된 표기다. 예를 들어 400 kg의 budget을 선택하면 종단 질량은 1505 kg 이상이어야 한다.
 
@@ -585,16 +381,7 @@ $$
 
 **Problem 7은 P6의 목적함수와 P5의 장애물 처리 방식을 결합한 문제**다.
 
-$$
-\min_{\mathbf X,\mathbf u,\sigma,\zeta}
-\sum_{k=1}^{N}
-\left(
--\alpha r_{x,k}
-+\lvert r_{y,k}\rvert
-+\lvert r_{z,k}\rvert
-\right)
-+W_\zeta\lVert\boldsymbol\zeta\rVert_2.
-$$
+$$\min_{\mathbf X,\mathbf u,\sigma,\zeta} \sum_{k=1}^{N} \left( -\alpha r_{x,k} +\lvert r_{y,k}\rvert +\lvert r_{z,k}\rvert \right) +W_\zeta\lVert\boldsymbol\zeta\rVert_2.$$
 
 제약에는 이산 동역학과 초기·종단 상태 조건, 선택한 fuel budget, $\lVert\mathbf u_k\rVert_2\le\sigma_k$, 갱신된 Taylor 추력 경계, reference-based homotopy obstacle constraint가 포함된다. (원문 식 (40), Algorithm 2)
 
@@ -618,29 +405,11 @@ Fig. 7에서는 작은 $\alpha$가 말기에 비교적 큰 고도각을 갖더�
 
 서로 다른 종단시간을 비교할 때 단순한 시간 적분 $\int\theta\,dt$를 사용하면 비행시간의 영향이 함께 들어간다. 논문은 이를 피하기 위해 고도 변화에 대해 elevation angle을 누적한다. 원문 식 (41)의 시간 매개화 표현은 다음과 같다.
 
-$$
-\Psi
-=
-\int_{t_0}^{t_f}
-\theta(t)\bigl(-v_x(t)\bigr)\,dt,
-\qquad
- d\bigl(-r_x(t)\bigr)=-v_x(t)\,dt.
-$$
+$$\Psi = \int_{t_0}^{t_f} \theta(t)\bigl(-v_x(t)\bigr)\,dt, \qquad d\bigl(-r_x(t)\bigr)=-v_x(t)\,dt.$$
 
 이산 평가는 원문 식 (42)를 따른다.
 
-$$
-\begin{aligned}
-\theta_k
-&=\arcsin\left(
-\frac{r_{x,k}}
-{\sqrt{r_{x,k}^2+r_{y,k}^2+r_{z,k}^2}}
-\right),\\
-\Psi
-&\approx\sum_{k=1}^{N}
-\theta_k\bigl(-v_{x,k}\bigr)\Delta t.
-\end{aligned}
-$$
+$$\begin{aligned} \theta_k &=\arcsin\left( \frac{r_{x,k}} {\sqrt{r_{x,k}^2+r_{y,k}^2+r_{z,k}^2}} \right),\\ \Psi &\approx\sum_{k=1}^{N} \theta_k\bigl(-v_{x,k}\bigr)\Delta t. \end{aligned}$$
 
 논문은 이산 합 자체를 $\Psi$로 표기한다. 위 근사 기호는 연속 적분과 수치 합을 구분하기 위한 것이며, 합의 범위와 평가식은 원문을 따른다. 특히 $k=1,\ldots,N$이므로 정확한 착륙점인 $N+1$번째 상태에서 고도각을 계산하는 식은 아니다.
 
@@ -662,24 +431,11 @@ $$
 
 원문 Fig. 17의 전체 절차는 다음과 같이 정리할 수 있다.
 
-$$
-(m_{\mathrm{fuel}},t_f)
-\xrightarrow{\text{Algorithm 2}}
-\mathbf X^*(\cdot)
-\longrightarrow
-\theta_k
-\longrightarrow
-\Psi.
-$$
+$$(m_{\mathrm{fuel}},t_f) \xrightarrow{\text{Algorithm 2}} \mathbf X^*(\cdot) \longrightarrow \theta_k \longrightarrow \Psi.$$
 
 주어진 연료 조건에서 가능한 종단시간 범위를 구하고, 그 범위 안의 시간 후보마다 Algorithm 2를 실행한다. 각 궤적의 $\Psi$를 계산한 뒤 가장 큰 값을 갖는 후보를 선택한다. 이 과정을 후보 집합 $\mathcal T(m_{\mathrm{fuel}})$에 대한 선택식으로 쓰면 다음과 같다.
 
-$$
-t_f^*(m_{\mathrm{fuel}})
-\in
-\underset{t_f\in\mathcal T(m_{\mathrm{fuel}})}{\operatorname{arg\,max}}
-\;\Psi\bigl(\mathbf X^*(\cdot;m_{\mathrm{fuel}},t_f)\bigr).
-$$
+$$t_f^* \in \arg\max_{t_f \in T(m_{\mathrm{fuel}})} \Psi(t_f,m_{\mathrm{fuel}})$$
 
 $\mathcal T$는 Fig. 17의 시간 증가 절차를 설명하기 위해 사용한 표기다. 내부의 $\mathbf X^*$는 각 시간에서 위치 기반 목적함수로 생성한 궤적이고, 외부의 선택은 고도각 적분에 따라 수행된다.
 
@@ -740,11 +496,7 @@ Fig. 18(d)에 대응하는 원문 Table 3의 비교는 다음과 같다.
 
 Relaxed glide-slope 실험에서는 초기조건을 다음과 같이 변경한다.
 
-$$
-\mathbf r_0=[1500,0,500]^\top\ \mathrm{m},
-\qquad
-\mathbf v_0=[-75,0,-100]^\top\ \mathrm{m/s}.
-$$
+$$\mathbf r_0=[1500,0,500]^\top\ \mathrm{m}, \qquad \mathbf v_0=[-75,0,-100]^\top\ \mathrm{m/s}.$$
 
 Algorithm 1의 $t_f=80$ s 사례에서는 365.18 kg을 사용하며, $t_f=100$ s로 바꾸면 409.12 kg을 사용한다. 그러나 Fig. 20과 Fig. 21을 비교하면, 연료를 더 쓴 두 번째 궤적도 장애물 회피 형상이 크게 개선되지는 않는다. 이는 **최소연료 문제를 더 긴 시간에서 다시 푸는 것만으로 관측 형상이 개선되는 것은 아니라는 사례**다.
 
@@ -808,13 +560,6 @@ Fig. 35에서 점선은 fuel-optimal trajectory, 실선은 elevation-angle-based
 
 ---
 
-### References
-
-* Gao, D., Gong, Y., Guo, Y., Xiao, Y., Fadda, E., and Brandimarte, P., “Obstacle avoidance guidance for Mars powered descent using convex optimization and elevation angle,” *Acta Astronautica*, Vol. 248, 2026, pp. 296–313. [DOI: 10.1016/j.actaastro.2026.05.059](https://doi.org/10.1016/j.actaastro.2026.05.059)
-* 변정우, *Obstacle Avoidance Guidance for Mars Powered Descent Using Convex Optimization and Elevation Angle*, 정기 논문 세미나 발표 자료, 2026.10.02, 최종 PPT.
-
----
-
 **Review by 변정우, Aerospace Engineering Undergraduate Researcher**  
 **[Update - Time Log]**
-* 2026.10.03: [ver_1] 원논문과 최종 세미나 PPT를 바탕으로 Problem 1–7, Algorithm 1–2, 수치 결과 및 해석 범위를 정리
+* 2026.10.03: [ver_1] 원논문과 최종 세미나 PPT를 바탕으로 전반적인 초안 작성
